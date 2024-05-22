@@ -5,7 +5,7 @@ const Contacts = () => {
   const { contacts } = useContacts();
   return (
     <div>
-      <ul className="">
+      <ul>
         {contacts.map((item) => (
           <li
             key={item.id}

@@ -2,6 +2,7 @@ import Login from "./components/Login";
 import useLocalStorage from "./hooks/useLocalStorage";
 import Dashboard from "./components/Dashboard";
 import { ContactsProvider } from "./context/ContactsContext";
+import { ConversationProvider } from "./context/ConversationContext";
 
 const App = () => {
   const [id, setId] = useLocalStorage("id");
@@ -9,7 +10,9 @@ const App = () => {
     <div className="font-roboto">
       {id ? (
         <ContactsProvider>
-          <Dashboard id={id} />
+          <ConversationProvider>
+            <Dashboard id={id} />
+          </ConversationProvider>
         </ContactsProvider>
       ) : (
         <Login onIdSubmit={setId} />

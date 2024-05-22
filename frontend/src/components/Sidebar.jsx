@@ -40,7 +40,7 @@ const Sidebar = ({ id }) => {
       </div>
       <Modal isOpen={isOpen} setIsOpen={setIsOpen}>
         {tab === 0 ? (
-          <NewConversationModal />
+          <NewConversationModal setIsOpen={setIsOpen} />
         ) : (
           <NewContactModal setIsOpen={setIsOpen} />
         )}

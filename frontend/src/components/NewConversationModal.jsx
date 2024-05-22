@@ -2,13 +2,17 @@ import { useState } from "react";
 import { useContacts } from "../context/ContactsContext";
 import Check from "./Check";
 import Button from "./Button";
+import { useConversation } from "../context/ConversationContext";
 
-const NewConversationModal = () => {
+const NewConversationModal = ({ setIsOpen }) => {
   const { contacts } = useContacts();
+  const { createConversation } = useConversation();
   const [selected, setSelected] = useState([]);
+
   const submit = (e) => {
     e.preventDefault();
-    console.log(e);
+    createConversation(selected);
+    setIsOpen(false);
   };
 
   return (
