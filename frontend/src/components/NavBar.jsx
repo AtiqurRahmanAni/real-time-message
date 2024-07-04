@@ -24,8 +24,8 @@ const NavBar = () => {
   });
 
   return (
-    <nav className="sticky top-0 left-0 p-3 w-full bg-gray-200">
-      <div className="max-w-[1280px] m-auto flex justify-end">
+    <nav className="sticky top-0 left-0 p-3 bg-gray-200">
+      <div className="m-auto flex justify-end container">
         <Button
           className="btn-primary"
           onClick={() => mutation.mutate()}

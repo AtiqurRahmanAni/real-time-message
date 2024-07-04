@@ -3,7 +3,7 @@ import Sidebar from "../components/Sidebar";
 
 const Chat = () => {
   return (
-    <div className="flex">
+    <div className="flex container">
       <Sidebar />
     </div>
   );
