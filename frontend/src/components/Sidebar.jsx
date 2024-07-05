@@ -62,7 +62,7 @@ const Sidebar = () => {
 
   return (
     <div>
-      <ul className="border border-r-gray-300 min-w-fit">
+      <ul className="border border-r-gray-300 min-w-56">
         {conversations?.map((item, idx) => (
           <li
             key={item._id}
