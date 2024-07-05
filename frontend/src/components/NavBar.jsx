@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContextProvider";
 
 const NavBar = () => {
-  const { setUser } = useAuthContext();
+  const { logoutActions } = useAuthContext();
 
   const mutation = useMutation({
     mutationFn: () => {
@@ -14,7 +14,7 @@ const NavBar = () => {
     },
     onSuccess: (response) => {
       toast.success(response.data.message);
-      setUser(null);
+      logoutActions();
     },
     onError: (error) => {
       toast.error(

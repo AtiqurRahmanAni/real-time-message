@@ -17,6 +17,7 @@ const Sidebar = () => {
   const setNewConversation = conversationStore(
     (state) => state.setNewConversation
   );
+  const [onlineUsers, setOnlineUsers] = useState([]);
 
   const [loading, setLoading] = useState(true);
 
@@ -48,16 +49,36 @@ const Sidebar = () => {
     if (!socket) return;
 
     socket.on(ChatEventEnum.NEW_USER_EVENT, onNewUser);
+    socket.on(ChatEventEnum.CONNECTED_EVENT, onConnect);
+    socket.on(ChatEventEnum.USER_ONLINE, handleUserOnline);
+    socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
+      socket.off(ChatEventEnum.CONNECTED_EVENT, onConnect);
+      socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
+      socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
     };
-  });
+  }, [socket]);
+
+  const handleUserOnline = (onlineUsers) => {
+    // onlineUsers is an array
+    setOnlineUsers(onlineUsers);
+  };
+
+  const handleUserOffline = (onlineUsers) => {
+    // onlineUsers is an array
+    setOnlineUsers(onlineUsers);
+  };
 
   const onNewUser = (newConversation) => {
     if (newConversation) {
       setNewConversation(newConversation);
     }
+  };
+
+  const onConnect = () => {
+    console.log("Connected");
   };
 
   return (
@@ -71,9 +92,15 @@ const Sidebar = () => {
             }`}
             onClick={() => setConversationSelected(idx)}
           >
-            <p className="text-gray-500 font-semibold text-lg">
-              {item.displayName}
-            </p>
+            <div className="flex justify-between">
+              <p className="text-gray-500 font-semibold text-lg">
+                {item.displayName}
+              </p>
+              {/* for showing online status */}
+              {onlineUsers.includes(item._id) && (
+                <div className="w-[8px] h-[8px] bg-green-600 rounded-full" />
+              )}
+            </div>
             {item.conversation?.lastMessage && (
               <p>
                 Last Message: <span>{item.conversation.lastMessage}</span>

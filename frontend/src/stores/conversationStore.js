@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 const conversationStore = create((set) => ({
   conversations: [],
+  onlineUsers: new Set(),
   setConversations: (state) => set({ conversations: state }),
   setNewConversation: (newConversation) =>
     set((state) => ({

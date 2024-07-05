@@ -19,6 +19,8 @@ export const ChatEventEnum = Object.freeze({
   TYPING_EVENT: "typing",
   // ? when a new user signup
   NEW_USER_EVENT: "newUser",
+  USER_ONLINE: "userOnline",
+  USER_OFFLINE: "userOffline",
 });
 
 export const ChatRoomEnum = Object.freeze({
