@@ -5,7 +5,7 @@ import { useAuthContext } from "../context/AuthContextProvider";
 import toast from "react-hot-toast";
 
 const useFetchData = (queryKey, url, options = {}) => {
-  const { setUser } = useAuthContext();
+  const { logoutActions } = useAuthContext();
   const { isLoading, error, data } = useQuery({
     queryKey,
     queryFn: () => axiosInstance.get(url),
@@ -15,12 +15,12 @@ const useFetchData = (queryKey, url, options = {}) => {
   useEffect(() => {
     if (error) {
       if (error.response && error.response.status === 401) {
-        setUser(null);
+        logoutActions();
       } else {
         toast.error("Something went wrong");
       }
     }
-  }, [error, setUser]);
+  }, [error, logoutActions]);
 
   return { isLoading, error, data };
 };
