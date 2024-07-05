@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuthContext();
+  const { setUser, initSocket } = useAuthContext();
 
   const mutation = useMutation({
     mutationFn: (credentials) => {
@@ -19,7 +19,7 @@ const Login = () => {
     onSuccess: (response) => {
       toast.success("Login successful");
       setUser(response.data);
-      console.log(response.data);
+      initSocket();
     },
     onError: (error) => {
       toast.error(

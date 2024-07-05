@@ -3,6 +3,10 @@ import { create } from "zustand";
 const conversationStore = create((set) => ({
   conversations: [],
   setConversations: (state) => set({ conversations: state }),
+  setNewConversation: (newConversation) =>
+    set((state) => ({
+      conversations: [...state.conversations, newConversation],
+    })),
   setConversationSelected: (selectedIdx) =>
     set((state) => ({
       conversations: state.conversations.map((conversation, idx) =>

@@ -20,3 +20,7 @@ export const ChatEventEnum = Object.freeze({
   // ? when a new user signup
   NEW_USER_EVENT: "newUser",
 });
+
+export const ChatRoomEnum = Object.freeze({
+  NEW_USER_ROOM: "new-user-room",
+});

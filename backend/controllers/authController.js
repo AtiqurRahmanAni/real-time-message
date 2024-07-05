@@ -4,6 +4,8 @@ import { NotFoundError, BadRequestError } from "../utils/errors.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { hashPassword, comparePassword } from "../utils/index.js";
 import LoginDto from "../dto/loginDto.js";
+import { ChatEventEnum, ChatRoomEnum } from "../constants/index.js";
+import SignupDto from "../dto/signupDto.js";
 
 const lifetime = "3600000";
 
@@ -65,6 +67,12 @@ export const signup = asyncHandler(async (req, res) => {
     displayName,
     password: hashedPassword,
   });
+
+  const newUserDto = new SignupDto(newUser);
+  req.app
+    .get("io")
+    .in(ChatRoomEnum.NEW_USER_ROOM)
+    .emit(ChatEventEnum.NEW_USER_EVENT, newUserDto);
 
   return res.status(201).json({ message: "Signup successful" });
 });

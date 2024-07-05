@@ -11,8 +11,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <AuthContextProvider>
         <App />
-        <Toaster position="bottom-right" reverseOrder={false} />
       </AuthContextProvider>
+      <Toaster position="bottom-right" reverseOrder={false} />
     </BrowserRouter>
   </React.StrictMode>
 );

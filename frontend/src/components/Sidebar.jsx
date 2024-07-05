@@ -3,13 +3,19 @@ import conversationStore from "../stores/conversationStore";
 import { useEffect, useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
+import { ChatEventEnum } from "../constants/index.js";
+import socketStore from "../stores/socketStore.js";
 
 const Sidebar = () => {
   const { user, setUser } = useAuthContext();
+  const socket = socketStore((state) => state.socket);
   const conversations = conversationStore((state) => state.conversations);
   const setConversations = conversationStore((state) => state.setConversations);
   const setConversationSelected = conversationStore(
     (state) => state.setConversationSelected
+  );
+  const setNewConversation = conversationStore(
+    (state) => state.setNewConversation
   );
 
   const [loading, setLoading] = useState(true);
@@ -37,6 +43,22 @@ const Sidebar = () => {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on(ChatEventEnum.NEW_USER_EVENT, onNewUser);
+
+    return () => {
+      socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
+    };
+  });
+
+  const onNewUser = (newConversation) => {
+    if (newConversation) {
+      setNewConversation(newConversation);
+    }
+  };
 
   return (
     <div>
