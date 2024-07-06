@@ -69,6 +69,7 @@ export const signup = asyncHandler(async (req, res) => {
   });
 
   const newUserDto = new SignupDto(newUser);
+
   req.app
     .get("io")
     .in(ChatRoomEnum.NEW_USER_ROOM)

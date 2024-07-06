@@ -8,10 +8,12 @@ const messageSchema = new Schema({
   content: {
     type: String,
   },
+  // sender is senders' username
   sender: {
     type: String,
     required: true,
   },
+  // sender is receiver' username
   receiver: {
     type: String,
     required: true,

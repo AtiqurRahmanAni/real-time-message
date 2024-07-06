@@ -44,12 +44,17 @@ export const AuthContextProvider = ({ children }) => {
       }
     };
     fetchProfile();
+    return () => {
+      logoutActions();
+    };
   }, []);
 
   const logoutActions = () => {
-    socket.disconnect();
-    setSocket(null);
-    setUser(null);
+    if (socket) {
+      socket.disconnect();
+      setSocket(null);
+      setUser(null);
+    }
   };
 
   const value = {
