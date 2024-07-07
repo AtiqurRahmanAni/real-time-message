@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { ChatEventEnum } from "../constants/index.js";
 import socketStore from "../stores/socketStore.js";
 import { useQueryClient } from "@tanstack/react-query";
+import useFetchData from "../hooks/useFetchData.js";
 
 const Sidebar = () => {
   const queryClient = useQueryClient();
@@ -13,14 +14,14 @@ const Sidebar = () => {
   const { user, setUser } = useAuthContext();
   const socket = socketStore((state) => state.socket);
 
-  const conversations = conversationStore((state) => state.conversations);
-  const setConversations = conversationStore((state) => state.setConversations);
-  const setNewConversation = conversationStore(
-    (state) => state.setNewConversation
-  );
-  const updateConversation = conversationStore(
-    (state) => state.updateConversation
-  );
+  // const conversations = conversationStore((state) => state.conversations);
+  // const setConversations = conversationStore((state) => state.setConversations);
+  // const setNewConversation = conversationStore(
+  //   (state) => state.setNewConversation
+  // );
+  // const updateConversation = conversationStore(
+  //   (state) => state.updateConversation
+  // );
 
   // for select a conversation in the sidebar
   const selectedConversation = conversationStore(
@@ -31,33 +32,35 @@ const Sidebar = () => {
   );
   const selectedConversationRef = useRef(selectedConversation);
 
-  const [onlineUsers, setOnlineUsers] = useState([]);
+  // online users state
+  const onlineUsers = conversationStore((state) => state.onlineUsers);
+  const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
 
-  const [loading, setLoading] = useState(true);
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const response = await axiosInstance.get(
+  //         `/conversation/${user.username}`
+  //       );
+  //       setConversations(response.data);
+  //     } catch (err) {
+  //       if (err.response && err.response.status === 401) {
+  //         setUser(null);
+  //       } else {
+  //         toast.error("Something went wrong");
+  //       }
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchData();
+  // }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axiosInstance.get(
-          `/conversation/${user.username}`
-        );
-        // const conversationsWithSelected = response.data.map((conversation) => ({
-        //   ...conversation,
-        //   selected: false,
-        // }));
-        setConversations(response.data);
-      } catch (err) {
-        if (err.response && err.response.status === 401) {
-          setUser(null);
-        } else {
-          toast.error("Something went wrong");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
+  const {
+    isLoading,
+    error,
+    data: conversations,
+  } = useFetchData(["getConversations"], `/conversation/${user.username}`);
 
   useEffect(() => {
     if (!socket) return;
@@ -91,39 +94,59 @@ const Sidebar = () => {
     setOnlineUsers(onlineUsers);
   };
 
-  const onNewUser = (newConversation) => {
-    // if a user sign in, he will show in the sidebar
-    if (newConversation) {
-      setNewConversation(newConversation);
-    }
+  const onNewUser = () => {
+    // if a user sign in, refetch the sidebar data
+    queryClient.invalidateQueries({ queryKey: ["getConversations"] });
   };
 
   const onConnect = () => {
     console.log("Connected");
   };
 
-  // console.log(`From sidebar ${selectedConversation}`);
-
-  // console.log(conversations);
-
   const onMessageReceive = (data) => {
     const { conversation, message } = data;
-    // console.log(`Conversation: ${conversation}, Message: ${message}`);
     const currentSelectedConversation = selectedConversationRef.current;
     /* if there is a new conversation, update the selectedConversation, 
       because conversation is null if users do not exchange any messages */
-    // if (
-    //   selectedConversation &&
-    //   selectedConversation.username === message.receiver &&
-    //   !selectedConversation.conversation
-    // ) {
-    //   setSelectedConversation({
-    //     ...selectedConversation,
-    //     conversation: conversation,
-    //   });
-    // }
+    if (
+      currentSelectedConversation &&
+      !currentSelectedConversation.conversation &&
+      (currentSelectedConversation.username === message.receiver ||
+        currentSelectedConversation.username === message.sender)
+    ) {
+      setSelectedConversation({
+        ...currentSelectedConversation,
+        conversation: conversation,
+      });
+    }
 
-    updateConversation(conversation);
+    // update the sidebar last message and last message timestamp when a new message is received
+    queryClient.setQueryData(["getConversations"], (oldData) => {
+      if (!oldData) return null;
+      return {
+        ...oldData,
+        data: oldData?.data?.map((item) => {
+          // when there is a new message, last message and timestamp are always updated
+          if (
+            item.username === message.receiver ||
+            item.username === message.sender
+          ) {
+            return {
+              ...item,
+              conversation: conversation
+                ? {
+                    _id: conversation._id,
+                    lastMessage: conversation.lastMessage,
+                    lastMessageTimestamp: conversation.lastMessageTimestamp,
+                  }
+                : null,
+            };
+          } else {
+            return item;
+          }
+        }),
+      };
+    });
 
     /* if there is inbox open, only then update the cache, 
     it will rerender the inbox and show new messages */
@@ -133,7 +156,7 @@ const Sidebar = () => {
         currentSelectedConversation.username === message.sender)
     ) {
       queryClient.setQueryData(
-        ["getMessages", currentSelectedConversation._id],
+        ["getMessages", currentSelectedConversation.username],
         (oldData) => {
           if (!oldData) return { data: [message] };
           return {
@@ -148,30 +171,40 @@ const Sidebar = () => {
   return (
     <div>
       <ul className="border border-r-gray-300 min-w-56">
-        {conversations?.map((item) => (
+        {conversations?.data?.map((item) => (
           <li
             key={item._id}
-            className={`px-4 py-2 border border-b-gray-300 hover:bg-gray-200 cursor-pointer ${
-              item._id === selectedConversation?._id ? "bg-gray-300" : ""
+            className={`relative px-4 py-2 border border-b-gray-300 hover:bg-gray-200 cursor-pointer ${
+              item.username === selectedConversation?.username
+                ? "bg-gray-300"
+                : ""
             }`}
             onClick={() => setSelectedConversation(item)}
           >
-            <div className="flex justify-between">
+            <div>
               <p className="text-gray-500 font-semibold text-lg">
                 {item.displayName}
               </p>
-              {onlineUsers.includes(item._id) && (
-                <div className="w-[8px] h-[8px] bg-green-600 rounded-full" />
+              {onlineUsers.includes(item.username) && (
+                <div className="absolute right-2 top-2 w-[8px] h-[8px] bg-green-600 rounded-full" />
               )}
             </div>
             {item.conversation?.lastMessage && (
               <p>
-                Last Message: <span>{item.conversation.lastMessage}</span>
+                <span className="text-gray-500 font-semibold">
+                  Last Message:
+                </span>{" "}
+                <span>
+                  {item.conversation.lastMessage.substr(0, 8) + "..."}
+                </span>
               </p>
             )}
             {item.conversation?.lastMessageTimestamp && (
               <p>
-                Time: <span>{item.conversation.lastMessageTimestamp}</span>
+                Time:{" "}
+                <span>
+                  {item.conversation.lastMessageTimestamp.substr(11, 8)}
+                </span>
               </p>
             )}
           </li>

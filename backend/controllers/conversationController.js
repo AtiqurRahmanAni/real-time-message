@@ -18,7 +18,7 @@ export const getConversationByParticipantIds = asyncHandler(
   }
 );
 
-export const getConversationsByUserId = asyncHandler(async (req, res) => {
+export const getConversationsByUsername = asyncHandler(async (req, res) => {
   const { username } = req.params;
 
   const conversations = await Users.aggregate([
@@ -103,7 +103,7 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
 });
 
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { content, sender, receiver, receiverId, senderId } = req.body;
+  const { sender, receiver, content } = req.body;
   const session = await mongoose.startSession();
 
   try {
@@ -149,21 +149,6 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     const message = new MessageDto(newMessage[0]);
 
-    // req.app
-    //   .get("io")
-    //   .in(senderId)
-    //   .emit(ChatEventEnum.MESSAGE_RECEIVED_EVENT, {
-    //     conversation: new ConversationDto(updatedConversation),
-    //     message,
-    //   });
-    // req.app
-    //   .get("io")
-    //   .in(receiverId)
-    //   .emit(ChatEventEnum.MESSAGE_RECEIVED_EVENT, {
-    //     conversation: new ConversationDto(updatedConversation),
-    //     message,
-    //   });
-
     await session.commitTransaction();
     session.endSession();
 
@@ -171,7 +156,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
        this is handy if sender is logged in multiple devices. sent message will appear
        in real time in all devices
     */
-    [senderId, receiverId].forEach((recipient) =>
+    [sender, receiver].forEach((recipient) =>
       req.app
         .get("io")
         .in(recipient)

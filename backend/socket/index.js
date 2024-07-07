@@ -8,20 +8,20 @@ export const initSocket = (io) => {
     // each connection will join this room so that if a new user signup, he will appear in the sidebar
     socket.join(ChatRoomEnum.NEW_USER_ROOM);
 
-    const userId = socket.handshake.query?.userId || "";
+    const username = socket.handshake.query?.username || "";
 
-    socket.join(userId);
-    if (userId && !onlineUsers.has(userId)) {
-      console.log(`User ${userId} just joined`);
-      onlineUsers.add(userId);
+    socket.join(username);
+    if (username && !onlineUsers.has(username)) {
+      console.log(`User ${username} just joined`);
+      onlineUsers.add(username);
       io.emit(ChatEventEnum.USER_ONLINE, [...onlineUsers]); // spreading to convert set to array
     }
 
     socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
-      console.log(`User ${userId} has disconnected`);
-      if (userId && onlineUsers.has(userId)) {
-        socket.leave(userId);
-        onlineUsers.delete(userId);
+      console.log(`User ${username} has disconnected`);
+      if (username && onlineUsers.has(username)) {
+        socket.leave(username);
+        onlineUsers.delete(username);
         io.emit(ChatEventEnum.USER_OFFLINE, [...onlineUsers]); // spreading to convert set to array
       }
     });

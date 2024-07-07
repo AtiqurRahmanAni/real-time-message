@@ -1,24 +1,33 @@
 import conversationStore from "../stores/conversationStore";
 import useFetchData from "../hooks/useFetchData.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance.js";
-import socketStore from "../stores/socketStore.js";
 import TextInput from "./TextInput.jsx";
+import { useEffect, useRef } from "react";
+import ChatItem from "./ChatItem.jsx";
+import toast from "react-hot-toast";
 
 const Inbox = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const socket = socketStore((state) => state.socket);
-  const { user } = useAuthContext();
+  const { user, logoutActions } = useAuthContext();
+  const messagesEndRef = useRef();
+
+  const queryClient = useQueryClient();
+
+  const cachedMessages = queryClient.getQueryData([
+    "getMessages",
+    selectedConversation.username,
+  ])?.data;
 
   const {
     isLoading,
     error,
     data: messages,
   } = useFetchData(
-    ["getMessages", selectedConversation._id], // queryKey for messages where _id is the user id
+    ["getMessages", selectedConversation.username], // queryKey for messages where _id is the user id
     `conversation/${selectedConversation?.conversation?._id}/messages`,
     { enabled: !!selectedConversation?.conversation?._id } // if conversation exists between two users, then fetch data
   );
@@ -28,38 +37,39 @@ const Inbox = () => {
       axiosInstance.post("/conversation/message", {
         sender: user.username,
         receiver: selectedConversation.username,
-        senderId: user._id,
-        receiverId: selectedConversation._id,
         content: content,
       }),
     onSuccess: (data) => {
-      console.log("Message sent.");
+      console.log(data);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+      if (error?.response?.status === 401) {
+        logoutActions();
+      }
     },
   });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "auto",
+      block: "end",
+    });
+  }, [messages, cachedMessages]);
 
   const handleSendMessage = (messageContent) => {
     mutation.mutate(messageContent);
   };
 
   return (
-    <div className="relative flex-1 h-full min-h-[calc(100dvh-4.45rem)] ml-4">
-      <ul className="space-y-1 mt-4 h-[calc(100dvh-9rem)] overflow-y-scroll pb-2 px-10">
-        {messages?.data.map((message) => (
-          <li
-            key={message._id}
-            className={`flex ${
-              message.sender === user.username ? "justify-end" : "justify-start"
-            }`}
-          >
-            <p
-              className={`${
-                message.sender === user.username ? "bg-blue-500" : "bg-gray-400"
-              } rounded-lg px-2 py-1 text-white`}
-            >
-              {message.content}
-            </p>
-          </li>
+    <div className="relative flex-1 min-h-[calc(100dvh-4.45rem)] ml-4">
+      <ul className="space-y-1 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+        {messages?.data?.map((message) => (
+          <ChatItem key={message._id} message={message} />
         ))}
+        <div ref={messagesEndRef} />
       </ul>
       <div className="absolute bottom-0 w-full">
         <TextInput disabled={mutation.isPending} onClick={handleSendMessage} />

@@ -1,7 +1,7 @@
 import express from "express";
 import checkToken from "../middlewares/checkToken.js";
 import {
-  getConversationsByUserId,
+  getConversationsByUsername,
   getConversationByParticipantIds,
   sendMessage,
   getMessagesByConversationId,
@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 
 // router.get("/:participantIds", checkToken, getConversationByParticipantIds);
-router.get("/:username", checkToken, getConversationsByUserId);
+router.get("/:username", checkToken, getConversationsByUsername);
 // router.post("/", checkToken, createOrGetConversation);
 router.get(
   "/:conversationId/messages",

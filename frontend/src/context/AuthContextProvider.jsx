@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { createContext, useContext } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import socketStore from "../stores/socketStore";
+import { useQueryClient } from "@tanstack/react-query";
+import conversationStore from "../stores/conversationStore";
 
 const AuthContext = createContext();
 
@@ -13,15 +14,18 @@ export const useAuthContext = () => useContext(AuthContext);
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const setSocket = socketStore((state) => state.setSocket);
   const socket = socketStore((state) => state.socket);
+  const queryClient = useQueryClient();
+  const resetConversations = conversationStore(
+    (state) => state.resetConversations
+  );
 
-  const initSocket = (userId) => {
+  const initSocket = (username) => {
     const socket_url = import.meta.env.VITE_SOCKET_URL;
     const socketInstance = io(socket_url, {
       withCredentials: true,
-      query: { userId },
+      query: { username },
     });
     setSocket(socketInstance);
   };
@@ -31,11 +35,10 @@ export const AuthContextProvider = ({ children }) => {
       try {
         const response = await axiosInstance.get("/users/profile");
         setUser(response.data);
-        initSocket(response.data._id);
+        initSocket(response.data.username);
       } catch (err) {
         if (err.response && err.response.status === 401) {
           setUser(null);
-          navigate("/login");
         } else {
           toast.error("Something went wrong");
         }
@@ -44,17 +47,16 @@ export const AuthContextProvider = ({ children }) => {
       }
     };
     fetchProfile();
-    return () => {
-      logoutActions();
-    };
   }, []);
 
   const logoutActions = () => {
     if (socket) {
       socket.disconnect();
       setSocket(null);
-      setUser(null);
     }
+    setUser(null);
+    resetConversations();
+    queryClient.removeQueries();
   };
 
   const value = {

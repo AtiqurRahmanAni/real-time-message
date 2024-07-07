@@ -1,8 +1,13 @@
 import { create } from "zustand";
 
-const conversationStore = create((set) => ({
+const initialStates = {
   selectedConversation: null,
   conversations: null,
+  onlineUsers: [],
+};
+
+const conversationStore = create((set) => ({
+  ...initialStates,
   setSelectedConversation: (state) => set({ selectedConversation: state }),
   setConversations: (state) => set({ conversations: state }),
   setNewConversation: (newConversation) =>
@@ -28,6 +33,8 @@ const conversationStore = create((set) => ({
         }),
       };
     }),
+  setOnlineUsers: (state) => set({ onlineUsers: state }),
+  resetConversations: () => set(initialStates),
 }));
 
 export default conversationStore;

@@ -10,7 +10,15 @@ const Chat = () => {
   return (
     <div className="flex container">
       <Sidebar />
-      {selectedConversation && <Inbox />}
+      {selectedConversation ? (
+        <Inbox />
+      ) : (
+        <div className="relative flex-1 min-h-[calc(100dvh-3.5rem)] flex justify-center items-center">
+          <h1 className="font-semibold text-gray-500 text-2xl">
+            Select a conversation to start
+          </h1>
+        </div>
+      )}
     </div>
   );
 };
