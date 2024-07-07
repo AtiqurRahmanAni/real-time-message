@@ -7,6 +7,7 @@ import TextInput from "./TextInput.jsx";
 import { useEffect, useRef } from "react";
 import ChatItem from "./ChatItem.jsx";
 import toast from "react-hot-toast";
+import SpinnerBlock from "../assets/Spinner.jsx";
 
 const Inbox = () => {
   const selectedConversation = conversationStore(
@@ -63,16 +64,30 @@ const Inbox = () => {
     mutation.mutate(messageContent);
   };
 
+  if (error) {
+    toast.error(error?.data?.message);
+  }
+
   return (
     <div className="relative flex-1 min-h-[calc(100dvh-4.45rem)] ml-4">
-      <ul className="space-y-1 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-        {messages?.data?.map((message) => (
-          <ChatItem key={message._id} message={message} />
-        ))}
-        <div ref={messagesEndRef} />
-      </ul>
+      {isLoading ? (
+        <div className="h-full flex justify-center items-center">
+          <SpinnerBlock />
+        </div>
+      ) : (
+        <ul className="space-y-1 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+          {messages?.data?.map((message) => (
+            <ChatItem key={message._id} message={message} />
+          ))}
+          <div ref={messagesEndRef} />
+        </ul>
+      )}
+
       <div className="absolute bottom-0 w-full">
-        <TextInput disabled={mutation.isPending} onClick={handleSendMessage} />
+        <TextInput
+          disabled={mutation.isPending || isLoading}
+          onClick={handleSendMessage}
+        />
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import SidebarItem from "./SidebarItem.jsx";
 const Sidebar = () => {
   const queryClient = useQueryClient();
 
-  const { user, setUser } = useAuthContext();
+  const { user } = useAuthContext();
   const socket = socketStore((state) => state.socket);
 
   // for selecting a conversation in the sidebar
@@ -26,31 +26,15 @@ const Sidebar = () => {
 
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const response = await axiosInstance.get(
-  //         `/conversation/${user.username}`
-  //       );
-  //       setConversations(response.data);
-  //     } catch (err) {
-  //       if (err.response && err.response.status === 401) {
-  //         setUser(null);
-  //       } else {
-  //         toast.error("Something went wrong");
-  //       }
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   fetchData();
-  // }, []);
-
   const {
     isLoading,
     error,
     data: conversations,
   } = useFetchData(["getConversations"], `/conversation/${user.username}`);
+
+  if (error) {
+    toast.error(error?.data?.message);
+  }
 
   useEffect(() => {
     if (!socket) return;
