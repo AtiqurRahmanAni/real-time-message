@@ -7,6 +7,7 @@ import { ChatEventEnum } from "../constants/index.js";
 import socketStore from "../stores/socketStore.js";
 import { useQueryClient } from "@tanstack/react-query";
 import useFetchData from "../hooks/useFetchData.js";
+import SidebarItem from "./SidebarItem.jsx";
 
 const Sidebar = () => {
   const queryClient = useQueryClient();
@@ -14,16 +15,7 @@ const Sidebar = () => {
   const { user, setUser } = useAuthContext();
   const socket = socketStore((state) => state.socket);
 
-  // const conversations = conversationStore((state) => state.conversations);
-  // const setConversations = conversationStore((state) => state.setConversations);
-  // const setNewConversation = conversationStore(
-  //   (state) => state.setNewConversation
-  // );
-  // const updateConversation = conversationStore(
-  //   (state) => state.updateConversation
-  // );
-
-  // for select a conversation in the sidebar
+  // for selecting a conversation in the sidebar
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
@@ -32,8 +24,6 @@ const Sidebar = () => {
   );
   const selectedConversationRef = useRef(selectedConversation);
 
-  // online users state
-  const onlineUsers = conversationStore((state) => state.onlineUsers);
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
 
   // useEffect(() => {
@@ -123,32 +113,43 @@ const Sidebar = () => {
     // update the sidebar last message and last message timestamp when a new message is received
     queryClient.setQueryData(["getConversations"], (oldData) => {
       if (!oldData) return null;
+
+      let items = [];
+      let latestItem = null;
+
+      for (let i = 0; i < oldData?.data?.length; i++) {
+        let item = oldData?.data[i];
+        if (
+          item.username === message.receiver ||
+          item.username === message.sender
+        ) {
+          latestItem = {
+            ...item,
+            conversation: conversation
+              ? {
+                  _id: conversation._id,
+                  lastMessage: conversation.lastMessage,
+                  lastMessageTimestamp: conversation.lastMessageTimestamp,
+                }
+              : null,
+          };
+        } else {
+          items.push(item);
+        }
+      }
+
+      /* adding the latest one in front of the list so that
+        it appears at the beginning of the sidebar
+      */
+      items.unshift(latestItem);
+
       return {
         ...oldData,
-        data: oldData?.data?.map((item) => {
-          // when there is a new message, last message and timestamp are always updated
-          if (
-            item.username === message.receiver ||
-            item.username === message.sender
-          ) {
-            return {
-              ...item,
-              conversation: conversation
-                ? {
-                    _id: conversation._id,
-                    lastMessage: conversation.lastMessage,
-                    lastMessageTimestamp: conversation.lastMessageTimestamp,
-                  }
-                : null,
-            };
-          } else {
-            return item;
-          }
-        }),
+        data: items,
       };
     });
 
-    /* if there is inbox open, only then update the cache, 
+    /* if there is an inbox open, only then update the cache, 
     it will rerender the inbox and show new messages */
     if (
       currentSelectedConversation &&
@@ -172,42 +173,7 @@ const Sidebar = () => {
     <div>
       <ul className="border border-r-gray-300 min-w-56">
         {conversations?.data?.map((item) => (
-          <li
-            key={item._id}
-            className={`relative px-4 py-2 border border-b-gray-300 hover:bg-gray-200 cursor-pointer ${
-              item.username === selectedConversation?.username
-                ? "bg-gray-300"
-                : ""
-            }`}
-            onClick={() => setSelectedConversation(item)}
-          >
-            <div>
-              <p className="text-gray-500 font-semibold text-lg">
-                {item.displayName}
-              </p>
-              {onlineUsers.includes(item.username) && (
-                <div className="absolute right-2 top-2 w-[8px] h-[8px] bg-green-600 rounded-full" />
-              )}
-            </div>
-            {item.conversation?.lastMessage && (
-              <p>
-                <span className="text-gray-500 font-semibold">
-                  Last Message:
-                </span>{" "}
-                <span>
-                  {item.conversation.lastMessage.substr(0, 8) + "..."}
-                </span>
-              </p>
-            )}
-            {item.conversation?.lastMessageTimestamp && (
-              <p>
-                Time:{" "}
-                <span>
-                  {item.conversation.lastMessageTimestamp.substr(11, 8)}
-                </span>
-              </p>
-            )}
-          </li>
+          <SidebarItem key={item._id} item={item} />
         ))}
       </ul>
     </div>
