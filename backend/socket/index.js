@@ -1,4 +1,3 @@
-import { Server, Socket } from "socket.io";
 import { ChatEventEnum, ChatRoomEnum } from "../constants/index.js";
 
 const onlineUsers = new Set();

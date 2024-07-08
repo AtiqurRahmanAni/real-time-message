@@ -115,6 +115,7 @@ const Sidebar = () => {
 
   const onMessageReceive = (data) => {
     const { conversation, message } = data;
+
     const currentSelectedConversation = selectedConversationRef.current;
     /* if there is a new conversation, update the selectedConversation, 
       because conversation is null if users do not exchange any messages */
@@ -147,10 +148,12 @@ const Sidebar = () => {
         ) {
           latestItem = {
             ...item,
-            /* if user is in other users' inbox, then increment the 
+            /* if user is in other users' inbox, then increment the
               count of unseen messages except the selected conversation */
             unseenMessages:
-              currentSelectedConversation.conversation?._id !== conversation._id
+              !currentSelectedConversation ||
+              (currentSelectedConversation.username !== message.sender &&
+                currentSelectedConversation.username !== message.receiver)
                 ? item.unseenMessages + 1
                 : item.unseenMessages,
 
@@ -180,14 +183,12 @@ const Sidebar = () => {
 
     /* if there is an inbox open, only then update the cache, 
       it will rerender the inbox and show new messages.
-      also update the seen status to true of new messages
     */
     if (
       currentSelectedConversation &&
       (currentSelectedConversation.username === message.receiver ||
         currentSelectedConversation.username === message.sender)
     ) {
-      messageSeenStatusByMessageIdMutation.mutate(message._id);
       queryClient.setQueryData(
         ["getMessages", currentSelectedConversation.username],
         (oldData) => {
@@ -198,6 +199,13 @@ const Sidebar = () => {
           };
         }
       );
+    }
+
+    /* update the seen status to true of new messages if user are 
+     current in  the incoming message inbox
+    */
+    if (currentSelectedConversation?.username === message.sender) {
+      messageSeenStatusByMessageIdMutation.mutate(message._id);
     }
   };
 

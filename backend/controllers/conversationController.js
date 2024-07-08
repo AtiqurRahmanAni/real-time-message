@@ -114,23 +114,6 @@ export const getConversationsByUsername = asyncHandler(async (req, res) => {
   return res.status(200).send(conversations);
 });
 
-const createOrGetConversation = async (username1, username2) => {
-  // const { username1, username2 } = req.body;
-
-  const conversation = await Conversation.findOne({
-    participants: { $all: [username1, username2], $size: 2 },
-  }).select({ __v: false, createdAt: false });
-
-  if (conversation) {
-    return conversation;
-  }
-  const newConversation = await Conversation.create({
-    participants: [username1, username2],
-  });
-
-  return newConversation;
-};
-
 export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
 
@@ -173,7 +156,6 @@ export const setSeenByMessageId = asyncHandler(async (req, res) => {
   const { seen } = req.body;
   try {
     await Message.findByIdAndUpdate({ _id: messageId }, { seen: seen });
-    console.log("I am here");
     return res.status(200).json({ message: "Set seen successful" });
   } catch (err) {
     console.log(`Error updating seen status: ${err}`);
