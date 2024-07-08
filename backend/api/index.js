@@ -16,15 +16,13 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
-const connectToDatabase = async () => {
-  try {
-    await mongoose.connect(process.env.DATABASE_URL);
-    console.log("Connected to database");
-  } catch (err) {
+mongoose
+  .connect(process.env.DATABASE_URL)
+  .then(() => console.log("Connected to database"))
+  .catch((err) => {
     console.log(`Error connecting to database ${err}`);
     process.exit(1);
-  }
-};
+  });
 
 const io = new Server(httpServer, {
   pingTimeout: 60000,
@@ -57,7 +55,6 @@ app.use(errorHandler);
 initSocket(io);
 
 httpServer.listen(PORT, () => {
-  connectToDatabase();
   console.log(`Server is listening on port ${PORT}`);
 });
 
