@@ -1,16 +1,16 @@
-import log from "./middlewares/logger.js";
+import log from "../middlewares/logger.js";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import authRouter from "./routes/authRoute.js";
-import userRouter from "./routes/usersRoute.js";
-import errorHandler from "./middlewares/errorHandler.js";
-import conversationRouter from "./routes/conversationRoute.js";
+import authRouter from "../routes/authRoute.js";
+import userRouter from "../routes/usersRoute.js";
+import errorHandler from "../middlewares/errorHandler.js";
+import conversationRouter from "../routes/conversationRoute.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { initSocket } from "./socket/index.js";
+import { initSocket } from "../socket/index.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -43,7 +43,7 @@ mongoose
     process.exit(1);
   });
 
-app.get("/test", (req, res) => {
+app.get("/", (req, res) => {
   return res.status(200).json({ message: "API is working" });
 });
 app.use("/api/auth", authRouter);
