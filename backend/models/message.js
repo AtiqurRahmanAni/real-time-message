@@ -29,5 +29,5 @@ const messageSchema = new Schema({
 });
 
 const Message = model("Message", messageSchema);
-// Message.createIndexes({ conversationId: 1, seen: 1 });
+Message.createIndexes({ conversationId: 1, seen: 1 });
 export default Message;

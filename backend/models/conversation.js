@@ -25,5 +25,5 @@ const conversationSchema = new Schema({
 });
 
 const Conversation = model("Conversation", conversationSchema);
-// Conversation.createIndexes({ participants: 1 });
+Conversation.createIndexes({ participants: 1 });
 export default Conversation;
