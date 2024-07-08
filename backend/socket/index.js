@@ -25,7 +25,7 @@ export const initSocket = (io) => {
 
     socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
       console.log(`User ${username} has disconnected`);
-      if (username && onlineUsers.has(username)) {
+      if (username) {
         socket.leave(username);
         onlineUsers.delete(username);
         io.emit(ChatEventEnum.USER_OFFLINE, [...onlineUsers]); // spreading to convert set to array
