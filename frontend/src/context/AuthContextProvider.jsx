@@ -47,6 +47,11 @@ export const AuthContextProvider = ({ children }) => {
       }
     };
     fetchProfile();
+    return () => {
+      if (socket) {
+        socket.disconnect();
+      }
+    };
   }, []);
 
   const logoutActions = () => {

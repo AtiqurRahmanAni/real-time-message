@@ -6,8 +6,6 @@ export const formatTimeStamp = (timestamp) => {
   const day = date.getUTCDate();
   const year = date.getUTCFullYear();
 
-  hours %= 12;
-  hours = hours ? hours : 12;
   const currentTime = new Date();
   const currentHour = currentTime.getUTCHours();
   const currentMinute = currentTime.getUTCMinutes();

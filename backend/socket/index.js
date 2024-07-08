@@ -10,7 +10,7 @@ export const initSocket = (io) => {
     const username = socket.handshake.query?.username || "";
 
     socket.join(username);
-    if (username && !onlineUsers.has(username)) {
+    if (username) {
       console.log(`User ${username} just joined`);
       onlineUsers.add(username);
       io.emit(ChatEventEnum.USER_ONLINE, [...onlineUsers]); // spreading to convert set to array
