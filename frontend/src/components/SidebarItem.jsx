@@ -2,6 +2,7 @@ import { ChatEventEnum } from "../constants";
 import { useAuthContext } from "../context/AuthContextProvider";
 import conversationStore from "../stores/conversationStore";
 import socketStore from "../stores/socketStore";
+import { formatTimeStamp } from "../utils/index";
 
 const SidebarItem = ({ item }) => {
   // for selecting a conversation in the sidebar
@@ -51,8 +52,7 @@ const SidebarItem = ({ item }) => {
       )}
       {item.conversation?.lastMessageTimestamp && (
         <p>
-          Time:{" "}
-          <span>{item.conversation.lastMessageTimestamp.substr(11, 8)}</span>
+          <span>{formatTimeStamp(item.conversation.lastMessageTimestamp)}</span>
         </p>
       )}
       {/* if the user is the last message sender, he will not see the unseen count */}

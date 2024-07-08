@@ -30,7 +30,9 @@ const Sidebar = () => {
     isLoading,
     error,
     data: conversations,
-  } = useFetchData(["getConversations"], `/conversation/${user.username}`);
+  } = useFetchData(["getConversations"], `/conversation/${user.username}`, {
+    refetchInterval: 1000 * 60 * 1, // refetch sidebar data every 1 minute so that timestamp updates
+  });
 
   // for updating the seen status of messages
   const messageSeenStatusTrueMutation = useMutation({

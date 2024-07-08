@@ -43,6 +43,9 @@ mongoose
     process.exit(1);
   });
 
+app.get("/", (req, res) => {
+  return res.status(200).json({ message: "API is working" });
+});
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/conversation", conversationRouter);
@@ -54,3 +57,5 @@ initSocket(io);
 httpServer.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
+
+export default app;

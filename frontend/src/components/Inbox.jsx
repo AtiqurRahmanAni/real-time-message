@@ -40,9 +40,9 @@ const Inbox = () => {
         receiver: selectedConversation.username,
         content: content,
       }),
-    onSuccess: (data) => {
-      console.log(data);
-    },
+    // onSuccess: (data) => {
+    //   console.log(data);
+    // },
     onError: (error) => {
       toast.error(
         error.response ? error.response.data.message : "Something went wrong"
