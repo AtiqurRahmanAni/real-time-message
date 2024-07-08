@@ -16,6 +16,14 @@ const app = express();
 const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
 
+mongoose
+  .connect(process.env.DATABASE_URL)
+  .then(() => console.log("Connected to database"))
+  .catch((err) => {
+    console.log(`Error connecting to database ${err}`);
+    process.exit(1);
+  });
+
 const io = new Server(httpServer, {
   pingTimeout: 60000,
   cors: {
@@ -34,14 +42,6 @@ app.use(
     origin: process.env.ALLOWED_ORIGIN,
   })
 );
-
-mongoose
-  .connect(process.env.DATABASE_URL)
-  .then(() => console.log("Connected to database"))
-  .catch((err) => {
-    console.log(`Error connecting to database ${err}`);
-    process.exit(1);
-  });
 
 app.get("/", (req, res) => {
   return res.status(200).json({ message: "API is working" });

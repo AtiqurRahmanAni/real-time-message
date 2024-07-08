@@ -203,8 +203,8 @@ const Sidebar = () => {
       );
     }
 
-    /* update the seen status to true of new messages if user are 
-     current in  the incoming message inbox
+    /* update the seen status to true of new messages if user is 
+     current in the incoming message inbox
     */
     if (currentSelectedConversation?.username === message.sender) {
       messageSeenStatusByMessageIdMutation.mutate(message._id);
@@ -212,7 +212,6 @@ const Sidebar = () => {
   };
 
   const onMessageSeen = (conversationId) => {
-    // console.log("onMessageSeen ", conversationId);
     // set the seen status to true for the message with this conversationId
     messageSeenStatusTrueMutation.mutate(conversationId);
 
