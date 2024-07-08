@@ -76,7 +76,6 @@ const Sidebar = () => {
     if (!socket) return;
 
     socket.on(ChatEventEnum.NEW_USER_EVENT, onNewUser);
-    socket.on(ChatEventEnum.CONNECTED_EVENT, onConnect);
     socket.on(ChatEventEnum.USER_ONLINE, handleUserOnline);
     socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
@@ -84,7 +83,6 @@ const Sidebar = () => {
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
-      socket.off(ChatEventEnum.CONNECTED_EVENT, onConnect);
       socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
       socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
@@ -109,10 +107,6 @@ const Sidebar = () => {
   const onNewUser = () => {
     // if a user sign in, refetch the sidebar data
     queryClient.invalidateQueries({ queryKey: ["getConversations"] });
-  };
-
-  const onConnect = () => {
-    console.log("Connected");
   };
 
   const onMessageReceive = (data) => {
