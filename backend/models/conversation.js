@@ -14,6 +14,10 @@ const conversationSchema = new Schema({
     type: Date,
     default: null,
   },
+  lastMessageSender: {
+    type: String,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

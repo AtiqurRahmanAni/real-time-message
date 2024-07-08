@@ -5,14 +5,14 @@ import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import { ChatEventEnum } from "../constants/index.js";
 import socketStore from "../stores/socketStore.js";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import useFetchData from "../hooks/useFetchData.js";
 import SidebarItem from "./SidebarItem.jsx";
 
 const Sidebar = () => {
   const queryClient = useQueryClient();
 
-  const { user } = useAuthContext();
+  const { user, logoutActions } = useAuthContext();
   const socket = socketStore((state) => state.socket);
 
   // for selecting a conversation in the sidebar
@@ -32,6 +32,40 @@ const Sidebar = () => {
     data: conversations,
   } = useFetchData(["getConversations"], `/conversation/${user.username}`);
 
+  // for updating the seen status of messages
+  const messageSeenStatusTrueMutation = useMutation({
+    mutationFn: (conversationId) => {
+      return axiosInstance.patch(
+        `conversation/${conversationId}/messages/seen`
+      );
+    },
+    // onSuccess: (response) => {
+    //   toast.success(response.data.message);
+    // },
+    onError: (error) => {
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+    },
+  });
+
+  // for updating a message seen status by message id
+  const messageSeenStatusByMessageIdMutation = useMutation({
+    mutationFn: (messageId) => {
+      return axiosInstance.patch(`/conversation/message/${messageId}/seen`, {
+        seen: true,
+      });
+    },
+    // onSuccess: (response) => {
+    //   toast.success(response.data.message);
+    // },
+    onError: (error) => {
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+    },
+  });
+
   if (error) {
     toast.error(error?.data?.message);
   }
@@ -44,6 +78,7 @@ const Sidebar = () => {
     socket.on(ChatEventEnum.USER_ONLINE, handleUserOnline);
     socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
+    socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
@@ -51,6 +86,7 @@ const Sidebar = () => {
       socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
       socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
+      socket.off(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
     };
   }, [socket]);
 
@@ -94,7 +130,9 @@ const Sidebar = () => {
       });
     }
 
-    // update the sidebar last message and last message timestamp when a new message is received
+    /* update the sidebar last message and last message timestamp when a new message is received
+       increment the unseen count for the unselected conversations
+    */
     queryClient.setQueryData(["getConversations"], (oldData) => {
       if (!oldData) return null;
 
@@ -109,6 +147,13 @@ const Sidebar = () => {
         ) {
           latestItem = {
             ...item,
+            /* if user is in other users' inbox, then increment the 
+              count of unseen messages except the selected conversation */
+            unseenMessages:
+              currentSelectedConversation.conversation?._id !== conversation._id
+                ? item.unseenMessages + 1
+                : item.unseenMessages,
+
             conversation: conversation
               ? {
                   _id: conversation._id,
@@ -134,12 +179,15 @@ const Sidebar = () => {
     });
 
     /* if there is an inbox open, only then update the cache, 
-    it will rerender the inbox and show new messages */
+      it will rerender the inbox and show new messages.
+      also update the seen status to true of new messages
+    */
     if (
       currentSelectedConversation &&
       (currentSelectedConversation.username === message.receiver ||
         currentSelectedConversation.username === message.sender)
     ) {
+      messageSeenStatusByMessageIdMutation.mutate(message._id);
       queryClient.setQueryData(
         ["getMessages", currentSelectedConversation.username],
         (oldData) => {
@@ -151,6 +199,30 @@ const Sidebar = () => {
         }
       );
     }
+  };
+
+  const onMessageSeen = (conversationId) => {
+    // console.log("onMessageSeen ", conversationId);
+    // set the seen status to true for the message with this conversationId
+    messageSeenStatusTrueMutation.mutate(conversationId);
+
+    // set the unseenCount to 0
+    queryClient.setQueryData(["getConversations"], (oldData) => {
+      if (!oldData) return null;
+      return {
+        ...oldData,
+        data: oldData?.data?.map((item) => {
+          if (item.conversation?._id === conversationId) {
+            return {
+              ...item,
+              unseenMessages: 0,
+            };
+          } else {
+            return item;
+          }
+        }),
+      };
+    });
   };
 
   return (

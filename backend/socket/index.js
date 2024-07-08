@@ -17,6 +17,13 @@ export const initSocket = (io) => {
       io.emit(ChatEventEnum.USER_ONLINE, [...onlineUsers]); // spreading to convert set to array
     }
 
+    socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, ({ conversationId, room }) => {
+      /* when a user click on a conversation, set the count of unseen messages to 0
+        broadcasting this event to that user
+      */
+      io.to(room).emit(ChatEventEnum.MESSAGE_SEEN_EVENT, conversationId);
+    });
+
     socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
       console.log(`User ${username} has disconnected`);
       if (username && onlineUsers.has(username)) {

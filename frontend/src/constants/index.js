@@ -25,4 +25,6 @@ export const ChatEventEnum = Object.freeze({
   USER_OFFLINE: "userOffline",
   // ? for updating sidebar information (e.g: lastMessage, lastMessageTimeStamp)
   CONVERSATION_UPDATE_EVENT: "conversationUpdate",
+  // ? when a user click on an inbox
+  MESSAGE_SEEN_EVENT: "messageSeen",
 });

@@ -64,10 +64,6 @@ const Inbox = () => {
     mutation.mutate(messageContent);
   };
 
-  if (error) {
-    toast.error(error?.data?.message);
-  }
-
   return (
     <div className="relative flex-1 min-h-[calc(100dvh-4.45rem)] ml-4">
       {isLoading ? (

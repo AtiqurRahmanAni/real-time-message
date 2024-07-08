@@ -63,8 +63,49 @@ export const getConversationsByUsername = asyncHandler(async (req, res) => {
               lastMessageTimestamp: {
                 $arrayElemAt: ["$conversationArray.lastMessageTimestamp", 0],
               },
+              lastMessageSender: {
+                $arrayElemAt: ["$conversationArray.lastMessageSender", 0],
+              },
             },
           },
+        },
+      },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        let: { conversationId: "$conversation._id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$conversationId", "$$conversationId"] },
+                  { $eq: ["$seen", false] },
+                ],
+              },
+            },
+          },
+          {
+            $count: "unseenCount",
+          },
+        ],
+        as: "unseenMessages",
+      },
+    },
+    {
+      $sort: {
+        "conversation.lastMessageTimestamp": -1, // -1 for descending order
+      },
+    },
+    {
+      $project: {
+        _id: true,
+        username: true,
+        displayName: true,
+        conversation: true,
+        unseenMessages: {
+          $ifNull: [{ $arrayElemAt: ["$unseenMessages.unseenCount", 0] }, 0],
         },
       },
     },
@@ -99,7 +140,45 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
       __v: false,
       createdAt: false,
     });
+
   return res.status(200).send(messages);
+});
+
+export const setSeenByConversationId = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  try {
+    const bulkOps = [
+      {
+        updateMany: {
+          filter: {
+            conversationId: conversationId,
+            seen: false,
+          },
+          update: { $set: { seen: true } },
+        },
+      },
+    ];
+
+    const updateResponse = await Message.bulkWrite(bulkOps);
+
+    return res.status(200).json({ message: "Set seen successful" });
+  } catch (err) {
+    console.log(`Error updating seen status: ${err}`);
+    throw new InternalServerError("Something went wrong updating seen status");
+  }
+});
+
+export const setSeenByMessageId = asyncHandler(async (req, res) => {
+  const { messageId } = req.params;
+  const { seen } = req.body;
+  try {
+    await Message.findByIdAndUpdate({ _id: messageId }, { seen: seen });
+    console.log("I am here");
+    return res.status(200).json({ message: "Set seen successful" });
+  } catch (err) {
+    console.log(`Error updating seen status: ${err}`);
+    throw new InternalServerError("Something went wrong updating seen status");
+  }
 });
 
 export const sendMessage = asyncHandler(async (req, res) => {
@@ -123,6 +202,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
           [
             {
               participants: [sender, receiver],
+              lastMessageSender: sender,
             },
           ],
           { session }
@@ -143,7 +223,11 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     const updatedConversation = await Conversation.findByIdAndUpdate(
       { _id: conversation._id },
-      { lastMessage: content, lastMessageTimestamp: new Date() },
+      {
+        lastMessage: content,
+        lastMessageTimestamp: new Date(),
+        lastMessageSender: sender,
+      },
       { new: true, session }
     );
 

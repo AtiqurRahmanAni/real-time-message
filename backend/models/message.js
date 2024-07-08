@@ -2,7 +2,7 @@ import { Schema, model } from "mongoose";
 
 const messageSchema = new Schema({
   conversationId: {
-    type: String,
+    type: Schema.Types.ObjectId,
     required: true,
   },
   content: {
@@ -18,6 +18,10 @@ const messageSchema = new Schema({
     type: String,
     required: true,
   },
+  seen: {
+    type: Boolean,
+    default: false,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -25,5 +29,5 @@ const messageSchema = new Schema({
 });
 
 const Message = model("Message", messageSchema);
-Message.createIndexes({ conversationId: 1 });
+Message.createIndexes({ conversationId: 1, seen: 1 });
 export default Message;

@@ -5,6 +5,8 @@ import {
   getConversationByParticipantIds,
   sendMessage,
   getMessagesByConversationId,
+  setSeenByConversationId,
+  setSeenByMessageId,
 } from "../controllers/conversationController.js";
 
 const router = express.Router();
@@ -18,5 +20,15 @@ router.get(
   getMessagesByConversationId
 );
 router.post("/message", checkToken, sendMessage);
+router.patch(
+  "/:conversationId/messages/seen",
+  checkToken,
+  setSeenByConversationId
+);
+router.patch(
+  "/conversation/message/:messageId/seen",
+  checkToken,
+  setSeenByMessageId
+);
 
 export default router;

@@ -7,7 +7,7 @@ import LoginDto from "../dto/loginDto.js";
 import { ChatEventEnum, ChatRoomEnum } from "../constants/index.js";
 import SignupDto from "../dto/signupDto.js";
 
-const lifetime = "3600000";
+const lifetime = "36000000";
 
 export const login = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
