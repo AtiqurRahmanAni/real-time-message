@@ -29,6 +29,18 @@ export const initSocket = (io) => {
       }
     );
 
+    socket.on(ChatEventEnum.TYPING_EVENT, (targetUserId) => {
+      /* broadcasting the typing event to the target user
+       */
+      io.to(targetUserId).emit(ChatEventEnum.TYPING_EVENT);
+    });
+
+    socket.on(ChatEventEnum.STOP_TYPING_EVENT, (targetUserId) => {
+      /* broadcasting the stop typing event to the target user
+       */
+      io.to(targetUserId).emit(ChatEventEnum.STOP_TYPING_EVENT);
+    });
+
     socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
       console.log(`User ${userId} has disconnected`);
       if (userId) {

@@ -1,6 +1,6 @@
 import { useAuthContext } from "../context/AuthContextProvider";
 import conversationStore from "../stores/conversationStore";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import { ChatEventEnum } from "../constants/index.js";
@@ -12,7 +12,7 @@ import SidebarItem from "./SidebarItem.jsx";
 const Sidebar = () => {
   const queryClient = useQueryClient();
 
-  const { user, logoutActions } = useAuthContext();
+  const { user } = useAuthContext();
   const socket = socketStore((state) => state.socket);
 
   // for selecting a conversation in the sidebar

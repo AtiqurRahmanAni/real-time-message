@@ -78,7 +78,6 @@ const Inbox = () => {
           <div ref={messagesEndRef} />
         </ul>
       )}
-
       <div className="absolute bottom-0 w-full">
         <TextInput
           disabled={messageSendMutation.isPending || isLoading}
