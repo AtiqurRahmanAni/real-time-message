@@ -69,7 +69,7 @@ const TextInput = ({ onClick, disabled = false }) => {
     <div className="relative">
       {isOtherUserTyping && (
         <div className="absolute -top-4 right-3 text-right text-sm text-gray-500">
-          <span>{selectedConversation.displayName} Is typing...</span>
+          <span>{selectedConversation.displayName} is typing...</span>
         </div>
       )}
       <div>
