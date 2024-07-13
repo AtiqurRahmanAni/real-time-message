@@ -29,17 +29,20 @@ export const initSocket = (io) => {
       }
     );
 
-    socket.on(ChatEventEnum.TYPING_EVENT, (targetUserId) => {
+    socket.on(ChatEventEnum.TYPING_EVENT, ({ targetUserId, typingUserId }) => {
       /* broadcasting the typing event to the target user
        */
-      io.to(targetUserId).emit(ChatEventEnum.TYPING_EVENT);
+      io.to(targetUserId).emit(ChatEventEnum.TYPING_EVENT, typingUserId);
     });
 
-    socket.on(ChatEventEnum.STOP_TYPING_EVENT, (targetUserId) => {
-      /* broadcasting the stop typing event to the target user
-       */
-      io.to(targetUserId).emit(ChatEventEnum.STOP_TYPING_EVENT);
-    });
+    socket.on(
+      ChatEventEnum.STOP_TYPING_EVENT,
+      ({ targetUserId, typingUserId }) => {
+        /* broadcasting the stop typing event to the target user
+         */
+        io.to(targetUserId).emit(ChatEventEnum.STOP_TYPING_EVENT, typingUserId);
+      }
+    );
 
     socket.on(ChatEventEnum.DISCONNECT_EVENT, () => {
       console.log(`User ${userId} has disconnected`);

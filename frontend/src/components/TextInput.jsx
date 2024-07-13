@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import MessageSendButton from "./MessageSendButton";
 import socketStore from "../stores/socketStore";
 import { ChatEventEnum } from "../constants/index.js";
 import conversationStore from "../stores/conversationStore.js";
+import { useAuthContext } from "../context/AuthContextProvider.jsx";
 
 let isTyping = false;
 const TextInput = ({ onClick, disabled = false }) => {
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const [messageContent, setMessageContent] = useState("");
+  const { user } = useAuthContext();
   const socket = socketStore((state) => state.socket);
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
+  const selectedConversationRef = useRef(selectedConversation);
 
   useEffect(() => {
     if (!socket) return;
@@ -24,26 +27,42 @@ const TextInput = ({ onClick, disabled = false }) => {
     };
   }, [socket]);
 
-  const onTyping = () => {
-    setIsOtherUserTyping(true);
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation;
+  }, [selectedConversation]);
+
+  const onTyping = (typingUserId) => {
+    if (selectedConversationRef.current._id === typingUserId) {
+      setIsOtherUserTyping(true);
+    } else {
+      setIsOtherUserTyping(false);
+    }
   };
 
-  const onStopTyping = () => {
-    setIsOtherUserTyping(false);
+  const onStopTyping = (typingUserId) => {
+    if (selectedConversationRef.current._id === typingUserId) {
+      setIsOtherUserTyping(false);
+    }
   };
 
   const handleTextInputChange = (e) => {
     setMessageContent(e.target.value);
 
     if (!isTyping && socket) {
-      socket.emit(ChatEventEnum.TYPING_EVENT, selectedConversation._id);
+      socket.emit(ChatEventEnum.TYPING_EVENT, {
+        targetUserId: selectedConversation._id,
+        typingUserId: user._id,
+      });
       isTyping = true;
     }
   };
 
   const handleOnBlur = () => {
     isTyping = false;
-    socket.emit(ChatEventEnum.STOP_TYPING_EVENT, selectedConversation._id);
+    socket.emit(ChatEventEnum.STOP_TYPING_EVENT, {
+      targetUserId: selectedConversation._id,
+      typingUserId: user._id,
+    });
   };
 
   return (

@@ -95,6 +95,19 @@ const Sidebar = () => {
 
   const onMessageReceive = (data) => {
     const { conversation, message } = data;
+    /*
+    the conversation and the message objects are in the following format:
+    "conversation": {
+            "_id": ""
+      },
+      "lastMessage": {
+          "_id": "",
+          "content": "",
+          "senderId": "",
+          "receiverId": "",
+          "createdAt": ""
+      },
+    */
 
     const currentSelectedConversation = selectedConversationRef.current;
     /* if there is a new conversation, update the selectedConversation,
