@@ -12,14 +12,14 @@ const queryClient = new QueryClient({
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthContextProvider>
-          <App />
-        </AuthContextProvider>
-      </QueryClientProvider>
-      <Toaster position="bottom-right" reverseOrder={false} />
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <AuthContextProvider>
+        <App />
+      </AuthContextProvider>
+    </QueryClientProvider>
+    <Toaster position="bottom-right" reverseOrder={false} />
+  </BrowserRouter>
+  //   <React.StrictMode>
+  // </React.StrictMode>
 );

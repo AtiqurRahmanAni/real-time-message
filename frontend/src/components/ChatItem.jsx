@@ -7,12 +7,12 @@ const ChatItem = ({ message }) => {
     <li
       key={message._id}
       className={`flex ${
-        message.sender === user.username ? "justify-end" : "justify-start"
+        message.senderId === user._id ? "justify-end" : "justify-start"
       }`}
     >
       <p
         className={`${
-          message.sender === user.username ? "bg-blue-500" : "bg-gray-400"
+          message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
         } rounded-lg px-2 py-1 text-white`}
       >
         {message.content}

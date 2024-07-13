@@ -1,27 +1,21 @@
 import express from "express";
 import checkToken from "../middlewares/checkToken.js";
 import {
-  getConversationsByUsername,
+  getConversationsByUserId,
   sendMessage,
   getMessagesByConversationId,
-  setSeenByConversationId,
-  setSeenByMessageId,
+  updateLastSeenByParticipantId,
 } from "../controllers/conversationController.js";
 
 const router = express.Router();
 
-router.get("/:username", checkToken, getConversationsByUsername);
+router.get("/:userId", checkToken, getConversationsByUserId);
 router.get(
   "/:conversationId/messages",
   checkToken,
   getMessagesByConversationId
 );
 router.post("/message", checkToken, sendMessage);
-router.patch(
-  "/:conversationId/messages/seen",
-  checkToken,
-  setSeenByConversationId
-);
-router.patch("/message/:messageId/seen", checkToken, setSeenByMessageId);
+router.patch("/seen", checkToken, updateLastSeenByParticipantId);
 
 export default router;

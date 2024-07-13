@@ -30,32 +30,16 @@ const Sidebar = () => {
     isLoading,
     error,
     data: conversations,
-  } = useFetchData(["getConversations"], `/conversation/${user.username}`, {
+  } = useFetchData(["getConversations"], `/conversation/${user._id}`, {
     refetchInterval: 1000 * 60 * 1, // refetch sidebar data every 1 minute so that timestamp updates
   });
 
-  // for updating the seen status of messages
-  const messageSeenStatusTrueMutation = useMutation({
-    mutationFn: (conversationId) => {
-      return axiosInstance.patch(
-        `conversation/${conversationId}/messages/seen`
-      );
-    },
-    // onSuccess: (response) => {
-    //   toast.success(response.data.message);
-    // },
-    onError: (error) => {
-      toast.error(
-        error.response ? error.response.data.message : "Something went wrong"
-      );
-    },
-  });
-
-  // for updating a message seen status by message id
-  const messageSeenStatusByMessageIdMutation = useMutation({
-    mutationFn: (messageId) => {
-      return axiosInstance.patch(`/conversation/message/${messageId}/seen`, {
-        seen: true,
+  // for updating the last seen status of a user
+  const updateUserLastSeenMutation = useMutation({
+    mutationFn: (conversationId, participantId = null) => {
+      return axiosInstance.patch(`conversation/seen`, {
+        conversationId,
+        participantId: participantId || user._id,
       });
     },
     // onSuccess: (response) => {
@@ -113,17 +97,19 @@ const Sidebar = () => {
     const { conversation, message } = data;
 
     const currentSelectedConversation = selectedConversationRef.current;
-    /* if there is a new conversation, update the selectedConversation, 
-      because conversation is null if users do not exchange any messages */
+    /* if there is a new conversation, update the selectedConversation,
+      because conversation and lastMessage is null if users do not exchange any messages 
+    */
     if (
       currentSelectedConversation &&
       !currentSelectedConversation.conversation &&
-      (currentSelectedConversation.username === message.receiver ||
-        currentSelectedConversation.username === message.sender)
+      (currentSelectedConversation._id === message.receiverId ||
+        currentSelectedConversation._id === message.senderId)
     ) {
       setSelectedConversation({
         ...currentSelectedConversation,
         conversation: conversation,
+        lastMessage: message,
       });
     }
 
@@ -138,28 +124,19 @@ const Sidebar = () => {
 
       for (let i = 0; i < oldData?.data?.length; i++) {
         let item = oldData?.data[i];
-        if (
-          item.username === message.receiver ||
-          item.username === message.sender
-        ) {
+        if (item._id === message.senderId || item._id === message.receiverId) {
           latestItem = {
             ...item,
-            /* if user is in other users' inbox, then increment the
-              count of unseen messages except the selected conversation */
-            unseenMessages:
-              !currentSelectedConversation ||
-              (currentSelectedConversation.username !== message.sender &&
-                currentSelectedConversation.username !== message.receiver)
-                ? item.unseenMessages + 1
-                : item.unseenMessages,
+            /* if the message receiver is in other users' inbox, then increment 
+            the count of unseen messages except the selected conversation */
+            unseenCount:
+              currentSelectedConversation?._id !== message.senderId &&
+              message.senderId !== user._id
+                ? item.unseenCount + 1
+                : item.unseenCount,
 
-            conversation: conversation
-              ? {
-                  _id: conversation._id,
-                  lastMessage: conversation.lastMessage,
-                  lastMessageTimestamp: conversation.lastMessageTimestamp,
-                }
-              : null,
+            conversation: conversation,
+            lastMessage: message,
           };
         } else {
           items.push(item);
@@ -177,16 +154,16 @@ const Sidebar = () => {
       };
     });
 
-    /* if there is an inbox open, only then update the cache, 
+    /* if there is an inbox open, only then update the cache,
       it will rerender the inbox and show new messages.
     */
     if (
       currentSelectedConversation &&
-      (currentSelectedConversation.username === message.receiver ||
-        currentSelectedConversation.username === message.sender)
+      (currentSelectedConversation._id === message.senderId ||
+        currentSelectedConversation._id === message.receiverId)
     ) {
       queryClient.setQueryData(
-        ["getMessages", currentSelectedConversation.username],
+        ["getMessages", currentSelectedConversation._id],
         (oldData) => {
           if (!oldData) return { data: [message] };
           return {
@@ -197,17 +174,18 @@ const Sidebar = () => {
       );
     }
 
-    /* update the seen status to true of new messages if user is 
-     current in the incoming message inbox
-    */
-    if (currentSelectedConversation?.username === message.sender) {
-      messageSeenStatusByMessageIdMutation.mutate(message._id);
+    // update the lastSeen of the receiver if he is in someones inbox
+    if (currentSelectedConversation?._id === message.senderId) {
+      updateUserLastSeenMutation.mutate(
+        currentSelectedConversation.conversation._id,
+        message.receiverId
+      );
     }
   };
 
-  const onMessageSeen = (conversationId) => {
+  const onMessageSeen = (selectedConversationId) => {
     // set the seen status to true for the message with this conversationId
-    messageSeenStatusTrueMutation.mutate(conversationId);
+    updateUserLastSeenMutation.mutate(selectedConversationId);
 
     // set the unseenCount to 0
     queryClient.setQueryData(["getConversations"], (oldData) => {
@@ -215,10 +193,10 @@ const Sidebar = () => {
       return {
         ...oldData,
         data: oldData?.data?.map((item) => {
-          if (item.conversation?._id === conversationId) {
+          if (item.conversation?._id === selectedConversationId) {
             return {
               ...item,
-              unseenMessages: 0,
+              unseenCount: 0,
             };
           } else {
             return item;

@@ -20,7 +20,7 @@ const Inbox = () => {
 
   const cachedMessages = queryClient.getQueryData([
     "getMessages",
-    selectedConversation.username,
+    selectedConversation._id,
   ])?.data;
 
   const {
@@ -28,16 +28,16 @@ const Inbox = () => {
     error,
     data: messages,
   } = useFetchData(
-    ["getMessages", selectedConversation.username], // queryKey for messages where _id is the user id
+    ["getMessages", selectedConversation._id], // queryKey for messages where _id is the user id
     `conversation/${selectedConversation?.conversation?._id}/messages`,
-    { enabled: !!selectedConversation?.conversation?._id } // if conversation exists between two users, then fetch data
+    { enabled: !!selectedConversation?.conversation } // if conversation exists between two users, then fetch data
   );
 
-  const mutation = useMutation({
+  const messageSendMutation = useMutation({
     mutationFn: (content) =>
       axiosInstance.post("/conversation/message", {
-        sender: user.username,
-        receiver: selectedConversation.username,
+        senderId: user._id,
+        receiverId: selectedConversation._id,
         content: content,
       }),
     // onSuccess: (data) => {
@@ -61,7 +61,7 @@ const Inbox = () => {
   }, [messages, cachedMessages]);
 
   const handleSendMessage = (messageContent) => {
-    mutation.mutate(messageContent);
+    messageSendMutation.mutate(messageContent);
   };
 
   return (
@@ -81,7 +81,7 @@ const Inbox = () => {
 
       <div className="absolute bottom-0 w-full">
         <TextInput
-          disabled={mutation.isPending || isLoading}
+          disabled={messageSendMutation.isPending || isLoading}
           onClick={handleSendMessage}
         />
       </div>

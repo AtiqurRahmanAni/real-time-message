@@ -19,7 +19,7 @@ const Login = () => {
     onSuccess: (response) => {
       toast.success("Login successful");
       setUser(response.data);
-      initSocket(response.data.username);
+      initSocket(response.data._id); // response is a user object
     },
     onError: (error) => {
       toast.error(

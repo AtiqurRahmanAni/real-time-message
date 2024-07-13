@@ -1,34 +1,43 @@
 export const formatTimeStamp = (timestamp) => {
-  const date = new Date(timestamp);
-  let hours = date.getUTCHours();
-  const minutes = date.getUTCMinutes();
-  const month = date.getUTCMonth();
-  const day = date.getUTCDate();
-  const year = date.getUTCFullYear();
+  const prevDate = new Date(timestamp);
+  const currDate = new Date();
 
-  const currentTime = new Date();
-  const currentHour = currentTime.getUTCHours();
-  const currentMinute = currentTime.getUTCMinutes();
-  const currentMonth = currentTime.getUTCMonth();
-  const currentDay = currentTime.getUTCDate();
-  const currentYear = currentTime.getUTCFullYear();
-  const hourDifference = currentHour - hours;
-  const minutesDifference = currentMinute - minutes;
-  const monthDifference = currentMonth - month;
-  const dayDifference = currentDay - day;
-  const yearDifference = currentYear - year;
+  const prevDateUTC = Date.UTC(
+    prevDate.getUTCFullYear(),
+    prevDate.getUTCMonth(),
+    prevDate.getUTCDate(),
+    prevDate.getUTCHours(),
+    prevDate.getUTCMinutes(),
+    prevDate.getUTCSeconds()
+  );
+  const currDateUTC = Date.UTC(
+    currDate.getUTCFullYear(),
+    currDate.getUTCMonth(),
+    currDate.getUTCDate(),
+    currDate.getUTCHours(),
+    currDate.getUTCMinutes(),
+    currDate.getUTCSeconds()
+  );
 
-  if (yearDifference > 0) {
-    return `${yearDifference} ${yearDifference === 1 ? "year" : "years"} ago`;
-  } else if (monthDifference > 0) {
-    return `${monthDifference} ${
-      monthDifference === 1 ? "month" : "months"
-    } ago`;
-  } else if (dayDifference > 0) {
-    return `${dayDifference} ${dayDifference === 1 ? "day" : "days"} ago`;
-  } else if (hourDifference > 0) {
-    return `${hourDifference}h`;
+  const diffMillis = currDateUTC - prevDateUTC;
+
+  // if the difference is greater than a year
+  if (diffMillis >= 31556952000) {
+    const year = Math.round(diffMillis / 31556952000);
+    return `${year} ${year > 1 ? "years" : "year"} ago`;
+  } else if (diffMillis >= 2629746000) {
+    const month = Math.round(diffMillis / 2629746000);
+    return `${month} ${month > 1 ? "months" : "month"} ago`;
+  } else if (diffMillis >= 86400000) {
+    const day = Math.round(diffMillis / 86400000);
+    return `${day} ${day > 1 ? "days" : "day"} ago`;
+  } else if (diffMillis >= 3600000) {
+    const hour = Math.round(diffMillis / 3600000);
+    return `${hour} ${hour > 1 ? "hours" : "hour"} ago`;
+  } else if (diffMillis >= 60000) {
+    const minute = Math.round(diffMillis / 60000);
+    return `${minute} ${minute > 1 ? "mins" : "min"} ago`;
   } else {
-    return minutesDifference === 0 ? "Just now" : `${minutesDifference}m ago`;
+    return "Just Now";
   }
 };

@@ -8,19 +8,13 @@ const messageSchema = new Schema({
   content: {
     type: String,
   },
-  // sender is senders' username
-  sender: {
-    type: String,
+  senderId: {
+    type: Schema.Types.ObjectId,
     required: true,
   },
-  // sender is receiver' username
-  receiver: {
-    type: String,
+  receiverId: {
+    type: Schema.Types.ObjectId,
     required: true,
-  },
-  seen: {
-    type: Boolean,
-    default: false,
   },
   createdAt: {
     type: Date,
@@ -29,5 +23,5 @@ const messageSchema = new Schema({
 });
 
 const Message = model("Message", messageSchema);
-Message.createIndexes({ conversationId: 1, seen: 1 });
+Message.createIndexes({ conversationId: 1 });
 export default Message;

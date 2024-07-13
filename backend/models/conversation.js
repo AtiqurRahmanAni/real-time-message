@@ -3,20 +3,18 @@ import { Schema, model } from "mongoose";
 const conversationSchema = new Schema({
   participants: [
     {
-      type: String,
+      participantId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+      },
+      lastSeenTime: {
+        type: Date,
+        default: null,
+      },
     },
   ],
-  lastMessage: {
-    type: String,
-    default: null,
-  },
-  lastMessageTimestamp: {
-    type: Date,
-    default: null,
-  },
-  lastMessageSender: {
-    type: String,
-    default: null,
+  lastMessageId: {
+    type: Schema.Types.ObjectId,
   },
   createdAt: {
     type: Date,

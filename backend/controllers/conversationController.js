@@ -1,7 +1,6 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import Conversation from "../models/conversation.js";
 import MessageDto from "../dto/messageDto.js";
-import ConversationDto from "../dto/conversationDto.js";
 import Users from "../models/user.js";
 import Message from "../models/message.js";
 import { InternalServerError } from "../utils/errors.js";
@@ -18,26 +17,29 @@ export const getConversationByParticipantIds = asyncHandler(
   }
 );
 
-export const getConversationsByUsername = asyncHandler(async (req, res) => {
-  const { username } = req.params;
+export const getConversationsByUserId = asyncHandler(async (req, res) => {
+  let { userId } = req.params;
+  userId = new mongoose.Types.ObjectId(userId);
 
   const conversations = await Users.aggregate([
     {
       $match: {
-        username: { $ne: username },
+        _id: { $ne: userId },
       },
     },
     {
       $lookup: {
         from: "conversations",
-        let: { username: "$username" },
+        let: { userId: "$_id" },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $in: ["$$username", "$participants"] },
-                  { $in: [username, "$participants"] },
+                  { $in: ["$$userId", "$participants.participantId"] },
+                  {
+                    $in: [userId, "$participants.participantId"],
+                  },
                 ],
               },
             },
@@ -47,66 +49,73 @@ export const getConversationsByUsername = asyncHandler(async (req, res) => {
       },
     },
     {
-      $project: {
-        _id: true,
-        username: true,
-        displayName: true,
-        conversation: {
-          $cond: {
-            if: { $eq: [{ $size: "$conversationArray" }, 0] },
-            then: null,
-            else: {
-              _id: { $arrayElemAt: ["$conversationArray._id", 0] },
-              lastMessage: {
-                $arrayElemAt: ["$conversationArray.lastMessage", 0],
-              },
-              lastMessageTimestamp: {
-                $arrayElemAt: ["$conversationArray.lastMessageTimestamp", 0],
-              },
-              lastMessageSender: {
-                $arrayElemAt: ["$conversationArray.lastMessageSender", 0],
-              },
-            },
-          },
-        },
-      },
+      $addFields: { conversation: { $arrayElemAt: ["$conversationArray", 0] } },
+    },
+    {
+      $unwind: { path: "$conversationArray", preserveNullAndEmptyArrays: true },
     },
     {
       $lookup: {
         from: "messages",
-        let: { conversationId: "$conversation._id" },
+        localField: "conversationArray.lastMessageId",
+        foreignField: "_id",
+        as: "lastMessage",
+      },
+    },
+    {
+      $unwind: { path: "$lastMessage", preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        let: {
+          conversationId: "$conversation._id",
+          lastSeenTime: {
+            $arrayElemAt: [
+              "$conversation.participants.lastSeenTime",
+              {
+                $indexOfArray: [
+                  "$conversation.participants.participantId",
+                  userId,
+                ],
+              },
+            ],
+          },
+        },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
                   { $eq: ["$conversationId", "$$conversationId"] },
-                  { $eq: ["$seen", false] },
+                  { $gte: ["$createdAt", "$$lastSeenTime"] },
                 ],
               },
             },
           },
-          {
-            $count: "unseenCount",
-          },
         ],
-        as: "unseenMessages",
+        as: "messages",
       },
     },
     {
-      $sort: {
-        "conversation.lastMessageTimestamp": -1, // -1 for descending order
-      },
+      $sort: { lastMessage: -1 },
     },
     {
       $project: {
-        _id: true,
-        username: true,
-        displayName: true,
-        conversation: true,
-        unseenMessages: {
-          $ifNull: [{ $arrayElemAt: ["$unseenMessages.unseenCount", 0] }, 0],
+        _id: 1,
+        username: 1,
+        displayName: 1,
+        conversation: {
+          _id: 1,
         },
+        lastMessage: {
+          _id: 1,
+          senderId: 1,
+          receiverId: 1,
+          content: 1,
+          createdAt: 1,
+        },
+        unseenCount: { $size: "$messages" },
       },
     },
   ]);
@@ -127,35 +136,22 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   return res.status(200).send(messages);
 });
 
-export const setSeenByConversationId = asyncHandler(async (req, res) => {
-  const { conversationId } = req.params;
+export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
+  const { conversationId, participantId } = req.body;
+
   try {
-    const bulkOps = [
+    const result = await Conversation.updateOne(
       {
-        updateMany: {
-          filter: {
-            conversationId: conversationId,
-            seen: false,
-          },
-          update: { $set: { seen: true } },
-        },
+        _id: new mongoose.Types.ObjectId(conversationId),
+        "participants.participantId": new mongoose.Types.ObjectId(
+          participantId
+        ),
       },
-    ];
+      {
+        $set: { "participants.$.lastSeenTime": new Date() },
+      }
+    );
 
-    const updateResponse = await Message.bulkWrite(bulkOps);
-
-    return res.status(200).json({ message: "Set seen successful" });
-  } catch (err) {
-    console.log(`Error updating seen status: ${err}`);
-    throw new InternalServerError("Something went wrong updating seen status");
-  }
-});
-
-export const setSeenByMessageId = asyncHandler(async (req, res) => {
-  const { messageId } = req.params;
-  const { seen } = req.body;
-  try {
-    await Message.findByIdAndUpdate({ _id: messageId }, { seen: seen });
     return res.status(200).json({ message: "Set seen successful" });
   } catch (err) {
     console.log(`Error updating seen status: ${err}`);
@@ -164,7 +160,7 @@ export const setSeenByMessageId = asyncHandler(async (req, res) => {
 });
 
 export const sendMessage = asyncHandler(async (req, res) => {
-  const { sender, receiver, content } = req.body;
+  const { senderId, receiverId, content } = req.body;
   const session = await mongoose.startSession();
 
   try {
@@ -172,7 +168,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     let conversation = null;
     conversation = await Conversation.findOne({
-      participants: { $all: [sender, receiver], $size: 2 },
+      participants: {
+        $all: [
+          { $elemMatch: { participantId: senderId } },
+          { $elemMatch: { participantId: receiverId } },
+        ],
+        $size: 2,
+      },
     })
       .select({ __v: false })
       .session(session);
@@ -183,8 +185,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
         await Conversation.create(
           [
             {
-              participants: [sender, receiver],
-              lastMessageSender: sender,
+              participants: [
+                { participantId: senderId, lastSeenTime: new Date() },
+                {
+                  participantId: receiverId,
+                  lastSeenTime: new Date("1995-12-17T00:00:00"), // if there is a new conversation, set the receiver lastSeenTime to the past so that when the messages are fetched, it will show the correct count
+                },
+              ],
             },
           ],
           { session }
@@ -196,19 +203,19 @@ export const sendMessage = asyncHandler(async (req, res) => {
         {
           conversationId: conversation._id,
           content: content,
-          sender: sender,
-          receiver: receiver,
+          senderId: senderId,
+          receiverId: receiverId,
         },
       ],
       { session }
     );
-
-    const updatedConversation = await Conversation.findByIdAndUpdate(
-      { _id: conversation._id },
+    const updatedConversation = await Conversation.findOneAndUpdate(
+      { _id: conversation._id, "participants.participantId": senderId },
       {
-        lastMessage: content,
-        lastMessageTimestamp: new Date(),
-        lastMessageSender: sender,
+        $set: {
+          "participants.$.lastSeenTime": new Date(),
+          lastMessageId: newMessage[0]._id, //newMessage is an array
+        },
       },
       { new: true, session }
     );
@@ -222,12 +229,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
        this is handy if sender is logged in multiple devices. sent message will appear
        in real time in all devices
     */
-    [sender, receiver].forEach((recipient) =>
+    [senderId, receiverId].forEach((recipient) =>
       req.app
         .get("io")
         .in(recipient)
         .emit(ChatEventEnum.MESSAGE_RECEIVED_EVENT, {
-          conversation: new ConversationDto(updatedConversation),
+          conversation: { _id: updatedConversation._id },
           message,
         })
     );

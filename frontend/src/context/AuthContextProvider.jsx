@@ -21,11 +21,11 @@ export const AuthContextProvider = ({ children }) => {
     (state) => state.resetConversations
   );
 
-  const initSocket = (username) => {
+  const initSocket = (userId) => {
     const socket_url = import.meta.env.VITE_SOCKET_URL;
     const socketInstance = io(socket_url, {
       withCredentials: true,
-      query: { username },
+      query: { userId },
     });
     setSocket(socketInstance);
   };
@@ -35,7 +35,7 @@ export const AuthContextProvider = ({ children }) => {
       try {
         const response = await axiosInstance.get("/users/profile");
         setUser(response.data);
-        initSocket(response.data.username);
+        initSocket(response.data._id);
       } catch (err) {
         if (err.response && err.response.status === 401) {
           setUser(null);
