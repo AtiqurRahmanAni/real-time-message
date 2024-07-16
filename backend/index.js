@@ -1,4 +1,4 @@
-import log from "./middlewares/logger.js";
+import log from "./middlewares/logger.middleware.js";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import "dotenv/config";
@@ -6,11 +6,12 @@ import cors from "cors";
 import express from "express";
 import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/usersRoute.js";
-import errorHandler from "./middlewares/errorHandler.js";
+import errorHandler from "./middlewares/errorHandler.middleware.js";
 import conversationRouter from "./routes/conversationRoute.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./socket/index.js";
+import { v2 as cloudinary } from "cloudinary";
 
 const app = express();
 const httpServer = createServer(app);
@@ -23,6 +24,13 @@ mongoose
     console.log(`Error connecting to database ${err}`);
     process.exit(1);
   });
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 const io = new Server(httpServer, {
   pingTimeout: 60000,

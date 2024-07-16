@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import MessageSendButton from "./MessageSendButton";
 import socketStore from "../stores/socketStore";
 import { ChatEventEnum } from "../constants/index.js";
 import conversationStore from "../stores/conversationStore.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
+import AttachmentButton from "./AttachmentButton.jsx";
+import CloseButton from "./CloseButton.jsx";
+import toast from "react-hot-toast";
 
 let isTyping = false;
-const TextInput = ({ onClick, disabled = false }) => {
+const TextInput = ({ onSendButtonClick, disabled = false }) => {
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const [messageContent, setMessageContent] = useState("");
   const { user } = useAuthContext();
@@ -15,6 +18,8 @@ const TextInput = ({ onClick, disabled = false }) => {
     (state) => state.selectedConversation
   );
   const selectedConversationRef = useRef(selectedConversation);
+  const attachmentInputRef = useRef(null);
+  const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
     if (!socket) return;
@@ -65,6 +70,41 @@ const TextInput = ({ onClick, disabled = false }) => {
     });
   };
 
+  const onAttachmentSelect = (e) => {
+    const attachments = e.target.files;
+
+    if (attachments.length > 6) {
+      toast.error("You can not add more than 6 attachments");
+      return;
+    }
+    if (attachments.length > 0) {
+      let temp = [];
+      for (let i = 0; i < attachments.length; i++) {
+        temp.push(attachments[i]);
+      }
+      setAttachments(temp);
+    }
+  };
+
+  const onRemoveAttachment = (removeIdx) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== removeIdx));
+  };
+
+  const handleSendButtonClick = () => {
+    const formData = new FormData();
+    formData.set("senderId", user._id);
+    formData.set("receiverId", selectedConversation._id);
+    formData.set("content", messageContent);
+
+    for (let i = 0; i < attachments.length; i++) {
+      formData.append("attachments", attachments[i]);
+    }
+
+    onSendButtonClick(formData);
+    setAttachments([]);
+    setMessageContent("");
+  };
+
   return (
     <div className="relative">
       {isOtherUserTyping && (
@@ -72,24 +112,58 @@ const TextInput = ({ onClick, disabled = false }) => {
           <span>{selectedConversation.displayName} is typing...</span>
         </div>
       )}
-      <div>
-        <textarea
-          onChange={handleTextInputChange}
-          onBlur={handleOnBlur}
-          className="pl-4 py-2 pr-14 w-full text-gray-500 bg-gray-200 rounded-md focus:outline-gray-300"
-          value={messageContent}
-          rows={2}
-          maxLength={150}
-        />
-      </div>
-      <div className="absolute bottom-1/2 translate-y-1/2 right-2">
-        <MessageSendButton
-          onClick={() => {
-            onClick(messageContent);
-            setMessageContent("");
-          }}
-          disabled={messageContent.trim() === "" || disabled}
-        />
+      <div className="bg-gray-200 rounded-xl p-2">
+        {attachments.length > 0 && (
+          <div className="flex gap-2.5 flex-wrap mb-2">
+            {attachments.map((item, idx) => (
+              <div key={idx}>
+                <div className="relative">
+                  <CloseButton
+                    className="absolute -right-[10px] -top-[10px]"
+                    onClick={() => onRemoveAttachment(idx)}
+                  />
+                </div>
+                <div className="w-24 h-24 border border-gray-300 rounded-lg overflow-hidden">
+                  <img
+                    className="w-full h-full object-fill"
+                    src={URL.createObjectURL(item)}
+                    alt="attachment"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="relative">
+          <div className="absolute top-1/2 -translate-y-1/2">
+            <AttachmentButton
+              onClick={() => attachmentInputRef?.current.click()}
+            />
+            <input
+              ref={attachmentInputRef}
+              hidden={true}
+              type="file"
+              multiple={true}
+              accept="image/jpeg,image/png,image/jpg"
+              onChange={onAttachmentSelect}
+            />
+          </div>
+
+          <textarea
+            onChange={handleTextInputChange}
+            onBlur={handleOnBlur}
+            className="bg-transparent pl-12 pr-14 w-full text-gray-500 focus:outline-none"
+            value={messageContent}
+            rows={2}
+            maxLength={150}
+          />
+          <div className="absolute bottom-1/2 translate-y-1/2 right-0">
+            <MessageSendButton
+              onClick={handleSendButtonClick}
+              disabled={messageContent.trim() === "" || disabled}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

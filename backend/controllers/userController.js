@@ -12,6 +12,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
       .select({ password: false, __v: false });
     return res.status(200).send(allUsers);
   } catch (err) {
+    console.error(`Error getting users: ${err}`);
     throw new InternalServerError("Error fetching users");
   }
 });
@@ -23,6 +24,7 @@ export const getProfile = asyncHandler(async (req, res) => {
     const userInfo = await User.findById(user.id).select({ __v: false });
     return res.status(200).send(new ProfileDto(userInfo));
   } catch (err) {
+    console.error(`Error getting profile: ${err}`);
     throw new InternalServerError("Error fetching profile");
   }
 });

@@ -50,14 +50,14 @@ const Login = () => {
             <Button
               className="btn-primary"
               type="submit"
-              disabled={mutation.isLoading}
+              disabled={mutation.isPending}
             >
               Login
             </Button>
             <Button
               className="btn-secondary"
               onClick={() => navigate("/signup")}
-              disabled={mutation.isLoading}
+              disabled={mutation.isPending}
             >
               Sign Up
             </Button>

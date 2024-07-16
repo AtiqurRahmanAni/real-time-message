@@ -6,6 +6,11 @@ import Message from "../models/message.js";
 import { InternalServerError } from "../utils/errors.js";
 import mongoose from "mongoose";
 import { ChatEventEnum } from "../constants/index.js";
+import { deleteFiles } from "../utils/index.js";
+import pLimit from "p-limit";
+import { v2 as cloudinary } from "cloudinary";
+
+const limit = pLimit(10);
 
 export const getConversationByParticipantIds = asyncHandler(
   async (req, res) => {
@@ -154,17 +159,35 @@ export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
 
     return res.status(200).json({ message: "Set seen successful" });
   } catch (err) {
-    console.log(`Error updating seen status: ${err}`);
+    console.error(`Error updating seen status: ${err}`);
     throw new InternalServerError("Something went wrong updating seen status");
   }
 });
 
 export const sendMessage = asyncHandler(async (req, res) => {
   const { senderId, receiverId, content } = req.body;
+  const { attachments } = req.files;
+
+  // console.log(senderId, receiverId, content, attachments);
+
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
+
+    const attachmentsToUpload = attachments?.map((attachment) => {
+      return limit(
+        async () =>
+          await cloudinary.uploader.upload(attachment.path, {
+            folder: "attachments",
+          }) // cloudinary folder where attachments are stored
+      );
+    });
+
+    let attachmentsUploadResult = null;
+    if (attachments) {
+      attachmentsUploadResult = await Promise.all(attachmentsToUpload);
+    }
 
     let conversation = null;
     conversation = await Conversation.findOne({
@@ -205,10 +228,15 @@ export const sendMessage = asyncHandler(async (req, res) => {
           content: content,
           senderId: senderId,
           receiverId: receiverId,
+          attachments: attachmentsUploadResult?.map((item) => ({
+            url: item.secure_url,
+            publicId: item.public_id,
+          })),
         },
       ],
       { session }
     );
+
     const updatedConversation = await Conversation.findOneAndUpdate(
       { _id: conversation._id, "participants.participantId": senderId },
       {
@@ -223,11 +251,10 @@ export const sendMessage = asyncHandler(async (req, res) => {
     const message = new MessageDto(newMessage[0]);
 
     await session.commitTransaction();
-    session.endSession();
 
-    /* new message will receive through socket connection both sender and receiver,
-       this is handy if sender is logged in multiple devices. sent message will appear
-       in real time in all devices
+    /* new message will receive through socket connection both sender and receiver, 
+    this is handy if sender is logged in multiple devices. sent message will appear 
+    in real time in all devices
     */
     [senderId, receiverId].forEach((recipient) =>
       req.app
@@ -241,9 +268,13 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     return res.status(200).json({ message: "Message sent" });
   } catch (err) {
-    console.error("Error sending message:", err);
     await session.abortTransaction();
+    console.error(`Error sending message: ${err}`);
+    throw new InternalServerError("Error sending message");
+  } finally {
     session.endSession();
-    throw new InternalServerError("Something went wrong sending message");
+    if (attachments) {
+      deleteFiles(attachments.map((item) => item.path));
+    }
   }
 });

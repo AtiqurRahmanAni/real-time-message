@@ -1,5 +1,5 @@
 import express from "express";
-import checkToken from "../middlewares/checkToken.js";
+import checkToken from "../middlewares/token.middleware.js";
 import { getAllUsers, getProfile } from "../controllers/userController.js";
 
 const router = express.Router();

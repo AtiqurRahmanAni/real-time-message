@@ -13,7 +13,7 @@ const Inbox = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const { user, logoutActions } = useAuthContext();
+  const { logoutActions } = useAuthContext();
   const messagesEndRef = useRef();
 
   const queryClient = useQueryClient();
@@ -34,11 +34,11 @@ const Inbox = () => {
   );
 
   const messageSendMutation = useMutation({
-    mutationFn: (content) =>
-      axiosInstance.post("/conversation/message", {
-        senderId: user._id,
-        receiverId: selectedConversation._id,
-        content: content,
+    mutationFn: (formData) =>
+      axiosInstance.post("/conversation/message", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }),
     // onSuccess: (data) => {
     //   console.log(data);
@@ -60,10 +60,6 @@ const Inbox = () => {
     });
   }, [messages, cachedMessages]);
 
-  const handleSendMessage = (messageContent) => {
-    messageSendMutation.mutate(messageContent);
-  };
-
   return (
     <div className="relative flex-1 min-h-[calc(100dvh-4.45rem)] ml-4">
       {isLoading ? (
@@ -71,7 +67,7 @@ const Inbox = () => {
           <SpinnerBlock />
         </div>
       ) : (
-        <ul className="space-y-1 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+        <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
           {messages?.data?.map((message) => (
             <ChatItem key={message._id} message={message} />
           ))}
@@ -81,7 +77,7 @@ const Inbox = () => {
       <div className="absolute bottom-0 w-full">
         <TextInput
           disabled={messageSendMutation.isPending || isLoading}
-          onClick={handleSendMessage}
+          onSendButtonClick={(formData) => messageSendMutation.mutate(formData)}
         />
       </div>
     </div>

@@ -1,4 +1,5 @@
 import bcrypt from "bcrypt";
+import fs from "fs";
 
 const saltRounds = 10;
 
@@ -10,4 +11,14 @@ export const hashPassword = async (password) => {
 
 export const comparePassword = async (password, hashedPassword) => {
   return await bcrypt.compare(password, hashedPassword);
+};
+
+export const deleteFiles = (files) => {
+  files.forEach((element) => {
+    fs.unlink(element, (err) => {
+      if (err) {
+        console.error("Failed to delete temporary attachment files:", err);
+      }
+    });
+  });
 };

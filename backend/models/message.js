@@ -1,5 +1,10 @@
 import { Schema, model } from "mongoose";
 
+const attachmentSchema = new Schema(
+  { url: String, publicId: String },
+  { _id: false }
+);
+
 const messageSchema = new Schema({
   conversationId: {
     type: Schema.Types.ObjectId,
@@ -8,6 +13,7 @@ const messageSchema = new Schema({
   content: {
     type: String,
   },
+  attachments: [attachmentSchema],
   senderId: {
     type: Schema.Types.ObjectId,
     required: true,
