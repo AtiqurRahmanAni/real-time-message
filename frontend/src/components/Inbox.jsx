@@ -37,6 +37,10 @@ const Inbox = () => {
         axiosInstance.get(
           `conversation/${selectedConversation?.conversation?._id}/messages?pageNo=${pageParam}&pageSize=5`
         ),
+      select: (data) => ({
+        pages: [...data.pages].reverse(),
+        pageParams: [...data.pageParams].reverse(),
+      }),
       initialPageParam: 1,
       getNextPageParam: (lastPage) => {
         return lastPage?.data.nextPage;
@@ -88,7 +92,6 @@ const Inbox = () => {
   useEffect(() => {
     if (inView) {
       fetchNextPage();
-      console.log("Here");
     }
   }, [fetchNextPage, inView]);
 
