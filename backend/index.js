@@ -12,6 +12,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./socket/index.js";
 import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 const app = express();
 const httpServer = createServer(app);
@@ -31,6 +32,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
   secure: true,
 });
+
+// for temporary image store
+const folderName = "uploads";
+try {
+  if (!fs.existsSync(folderName)) {
+    fs.mkdirSync(folderName);
+  }
+} catch (err) {
+  console.error(err);
+}
 
 const io = new Server(httpServer, {
   pingTimeout: 60000,
