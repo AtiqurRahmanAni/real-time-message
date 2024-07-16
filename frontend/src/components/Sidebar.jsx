@@ -25,6 +25,7 @@ const Sidebar = () => {
   const selectedConversationRef = useRef(selectedConversation);
 
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
+  const setNewMessages = conversationStore((state) => state.setNewMessages);
 
   const {
     isLoading,
@@ -178,10 +179,28 @@ const Sidebar = () => {
       queryClient.setQueryData(
         ["getMessages", currentSelectedConversation._id],
         (oldData) => {
-          if (!oldData) return { data: [message] };
+          if (!oldData) return;
+
+          const updatedMessages = [...oldData.pages[0].data.messages, message];
+
+          // Create a new pages array with the first page updated with the new messages array
+          const updatedPages = oldData.pages.map((page, index) => {
+            if (index === 0) {
+              return {
+                ...page,
+                data: {
+                  ...page.data,
+                  messages: updatedMessages,
+                },
+              };
+            }
+            return page;
+          });
+
+          // Return a new data object with the updated pages array
           return {
             ...oldData,
-            data: [...oldData.data, message],
+            pages: updatedPages,
           };
         }
       );

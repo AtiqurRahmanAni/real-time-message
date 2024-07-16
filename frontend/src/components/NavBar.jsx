@@ -1,12 +1,15 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContextProvider";
 import { IoIosLogOut } from "react-icons/io";
+import conversationStore from "../stores/conversationStore";
 
 const NavBar = () => {
   const { logoutActions, user } = useAuthContext();
-
+  const selectedConversation = conversationStore(
+    (state) => state.selectedConversation
+  );
   const mutation = useMutation({
     mutationFn: () => {
       return axiosInstance.post("/auth/logout", {});
@@ -21,6 +24,13 @@ const NavBar = () => {
       );
     },
   });
+
+  // const queryClient = useQueryClient();
+
+  // console.log(
+  //   queryClient.getQueryData(["getMessages", selectedConversation?._id]),
+  //   selectedConversation?._id
+  // );
 
   return (
     <nav className="sticky top-0 left-0 p-3 bg-gray-200">

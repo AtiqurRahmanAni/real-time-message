@@ -4,6 +4,7 @@ const initialStates = {
   selectedConversation: null,
   conversations: null,
   onlineUsers: [],
+  newMessages: [],
 };
 
 const conversationStore = create((set) => ({
@@ -34,6 +35,8 @@ const conversationStore = create((set) => ({
       };
     }),
   setOnlineUsers: (state) => set({ onlineUsers: state }),
+  setNewMessages: (newMessage) =>
+    set((state) => ({ newMessages: [...state.newMessages, newMessage] })),
   resetConversations: () => set(initialStates),
 }));
 

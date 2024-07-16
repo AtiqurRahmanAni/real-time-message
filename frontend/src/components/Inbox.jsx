@@ -1,13 +1,18 @@
 import conversationStore from "../stores/conversationStore";
 import useFetchData from "../hooks/useFetchData.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance.js";
 import TextInput from "./TextInput.jsx";
 import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner.jsx";
 import ImagePreviewModal from "./ImagePreviewDialog.jsx";
+import ChatItem from "./ChatItem.jsx";
 
 let selectedImageUrl = null;
 const Inbox = () => {
@@ -16,24 +21,41 @@ const Inbox = () => {
   );
   const { logoutActions } = useAuthContext();
   const messagesEndRef = useRef();
-  const { user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const cachedMessages = queryClient.getQueryData([
     "getMessages",
     selectedConversation._id,
-  ])?.data;
+  ])?.pages[0]?.data?.messages;
 
-  const {
-    isLoading,
-    error,
-    data: messages,
-  } = useFetchData(
-    ["getMessages", selectedConversation._id], // queryKey for messages where _id is the user id
-    `conversation/${selectedConversation?.conversation?._id}/messages`,
-    { enabled: !!selectedConversation?.conversation } // if conversation exists between two users, then fetch data
-  );
+  const { data, fetchNextPage, isFetchingNextPage, isLoading } =
+    useInfiniteQuery({
+      queryKey: ["getMessages", selectedConversation._id],
+      queryFn: ({ pageParam }) =>
+        axiosInstance.get(
+          `conversation/${selectedConversation?.conversation?._id}/messages?pageNo=${pageParam}&pageSize=100`
+        ),
+      initialPageParam: 1,
+      getNextPageParam: (lastPage) => {
+        return lastPage.nextPage ?? undefined;
+      },
+      enabled: !!selectedConversation?.conversation,
+    });
+
+  // console.log(data);
+
+  // if (data) {
+  //   console.log(
+  //     data?.pages.map((page) =>
+  //       page.data.messages.map((message) => message._id)
+  //     )
+  //   );
+  // }
+  // console.log(data?.pages.flatMap((data) => data.messages));
+
+  // const messages = null;
+  // const isLoading = true;
 
   const messageSendMutation = useMutation({
     mutationFn: (formData) =>
@@ -60,7 +82,7 @@ const Inbox = () => {
       behavior: "auto",
       block: "end",
     });
-  }, [messages, cachedMessages]);
+  }, [data, cachedMessages]);
 
   const onImageClick = (imageUrl) => {
     selectedImageUrl = imageUrl;
@@ -76,43 +98,15 @@ const Inbox = () => {
           </div>
         ) : (
           <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-            {messages?.data?.map((message) => (
-              <li
-                key={message._id}
-                className={`flex ${
-                  message.senderId === user._id
-                    ? "justify-end text-end"
-                    : "justify-start"
-                }`}
-              >
-                <div
-                  className={`rounded-lg lg:max-w-[50%] ${
-                    message.senderId === user._id
-                      ? "bg-blue-500"
-                      : "bg-gray-400"
-                  }`}
-                >
-                  {message.attachments.length > 0 && (
-                    <div className="flex rounded-lg overflow-hidden">
-                      {message.attachments.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="cursor-pointer"
-                          onClick={() => onImageClick(item.url)}
-                        >
-                          <img
-                            className="w-full h-full"
-                            src={item.url}
-                            alt="attachment"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <p className={`px-2 py-1 text-white`}>{message.content}</p>
-                </div>
-              </li>
-            ))}
+            {data?.pages.map((page) =>
+              page.data.messages.map((message) => (
+                <ChatItem
+                  key={message._id}
+                  message={message}
+                  onImageClick={onImageClick}
+                />
+              ))
+            )}
             <div ref={messagesEndRef} />
           </ul>
         )}

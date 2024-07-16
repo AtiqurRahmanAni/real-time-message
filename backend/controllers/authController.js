@@ -5,7 +5,6 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { hashPassword, comparePassword } from "../utils/index.js";
 import LoginDto from "../dto/loginDto.js";
 import { ChatEventEnum, ChatRoomEnum } from "../constants/index.js";
-import SignupDto from "../dto/signupDto.js";
 
 const lifetime = "36000000";
 
