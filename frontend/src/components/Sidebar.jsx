@@ -208,10 +208,7 @@ const Sidebar = () => {
 
     // update the lastSeen of the receiver if he is in someones inbox
     if (currentSelectedConversation?._id === message.senderId) {
-      updateUserLastSeenMutation.mutate(
-        currentSelectedConversation.conversation._id,
-        message.receiverId
-      );
+      updateUserLastSeenMutation.mutate(conversation._id, message.receiverId);
     }
   };
 

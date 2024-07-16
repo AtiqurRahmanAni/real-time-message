@@ -1,5 +1,4 @@
 import conversationStore from "../stores/conversationStore";
-import useFetchData from "../hooks/useFetchData.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import {
   useMutation,
@@ -13,6 +12,7 @@ import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner.jsx";
 import ImagePreviewModal from "./ImagePreviewDialog.jsx";
 import ChatItem from "./ChatItem.jsx";
+import { useInView } from "react-intersection-observer";
 
 let selectedImageUrl = null;
 const Inbox = () => {
@@ -23,6 +23,7 @@ const Inbox = () => {
   const messagesEndRef = useRef();
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { ref, inView } = useInView();
 
   const cachedMessages = queryClient.getQueryData([
     "getMessages",
@@ -34,11 +35,11 @@ const Inbox = () => {
       queryKey: ["getMessages", selectedConversation._id],
       queryFn: ({ pageParam }) =>
         axiosInstance.get(
-          `conversation/${selectedConversation?.conversation?._id}/messages?pageNo=${pageParam}&pageSize=100`
+          `conversation/${selectedConversation?.conversation?._id}/messages?pageNo=${pageParam}&pageSize=5`
         ),
       initialPageParam: 1,
       getNextPageParam: (lastPage) => {
-        return lastPage.nextPage ?? undefined;
+        return lastPage?.data.nextPage;
       },
       enabled: !!selectedConversation?.conversation,
     });
@@ -84,6 +85,13 @@ const Inbox = () => {
     });
   }, [data, cachedMessages]);
 
+  useEffect(() => {
+    if (inView) {
+      fetchNextPage();
+      console.log("Here");
+    }
+  }, [fetchNextPage, inView]);
+
   const onImageClick = (imageUrl) => {
     selectedImageUrl = imageUrl;
     setIsOpen(true);
@@ -98,6 +106,7 @@ const Inbox = () => {
           </div>
         ) : (
           <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+            <div ref={ref} />
             {data?.pages.map((page) =>
               page.data.messages.map((message) => (
                 <ChatItem
