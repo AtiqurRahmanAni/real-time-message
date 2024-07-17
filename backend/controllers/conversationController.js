@@ -139,7 +139,7 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const messages = await Message.find({ conversationId })
-    .sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .skip((page - 1) * size)
     .limit(size)
     .select({

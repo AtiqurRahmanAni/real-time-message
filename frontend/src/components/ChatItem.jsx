@@ -6,6 +6,7 @@ const ChatItem = ({ message, onImageClick }) => {
 
   return (
     <li
+      data-id={message._id}
       key={message._id}
       className={`flex ${
         message.senderId === user._id ? "justify-end text-end" : "justify-start"

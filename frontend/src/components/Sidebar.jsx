@@ -181,7 +181,7 @@ const Sidebar = () => {
         (oldData) => {
           if (!oldData) return;
 
-          const updatedMessages = [...oldData.pages[0].data.messages, message];
+          const updatedMessages = [message, ...oldData.pages[0].data.messages];
 
           // Create a new pages array with the first page updated with the new messages array
           const updatedPages = oldData.pages.map((page, index) => {

@@ -1,10 +1,6 @@
 import conversationStore from "../stores/conversationStore";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
-import {
-  useMutation,
-  useQueryClient,
-  useInfiniteQuery,
-} from "@tanstack/react-query";
+import { useMutation, useInfiniteQuery } from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance.js";
 import TextInput from "./TextInput.jsx";
 import { useEffect, useRef, useState } from "react";
@@ -14,53 +10,33 @@ import ImagePreviewModal from "./ImagePreviewDialog.jsx";
 import ChatItem from "./ChatItem.jsx";
 import { useInView } from "react-intersection-observer";
 
-let selectedImageUrl = null;
 const Inbox = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
   const { logoutActions } = useAuthContext();
-  const messagesEndRef = useRef();
   const [isOpen, setIsOpen] = useState(false);
-  const queryClient = useQueryClient();
   const { ref, inView } = useInView();
-
-  const cachedMessages = queryClient.getQueryData([
-    "getMessages",
-    selectedConversation._id,
-  ])?.pages[0]?.data?.messages;
+  const messagesEndRef = useRef(null);
+  const isInitialLoad = useRef(true);
+  const selectedImageUrl = useRef(null);
+  const prevScrollHeight = useRef(0);
+  const prevScrollTop = useRef(0);
+  const scrollContainerRef = useRef(null);
 
   const { data, fetchNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
       queryKey: ["getMessages", selectedConversation._id],
       queryFn: ({ pageParam }) =>
         axiosInstance.get(
-          `conversation/${selectedConversation?.conversation?._id}/messages?pageNo=${pageParam}&pageSize=5`
+          `conversation/${selectedConversation?.conversation?._id}/messages?pageNo=${pageParam}&pageSize=20`
         ),
-      select: (data) => ({
-        pages: [...data.pages].reverse(),
-        pageParams: [...data.pageParams].reverse(),
-      }),
       initialPageParam: 1,
       getNextPageParam: (lastPage) => {
         return lastPage?.data.nextPage;
       },
       enabled: !!selectedConversation?.conversation,
     });
-
-  // console.log(data);
-
-  // if (data) {
-  //   console.log(
-  //     data?.pages.map((page) =>
-  //       page.data.messages.map((message) => message._id)
-  //     )
-  //   );
-  // }
-  // console.log(data?.pages.flatMap((data) => data.messages));
-
-  // const messages = null;
-  // const isLoading = true;
 
   const messageSendMutation = useMutation({
     mutationFn: (formData) =>
@@ -83,20 +59,57 @@ const Inbox = () => {
   });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "auto",
-      block: "end",
-    });
-  }, [data, cachedMessages]);
+    if (isInitialLoad.current && data) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "auto",
+        block: "end",
+      });
+      isInitialLoad.current = false;
+    } else if (data && !inView) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      });
+    }
+  }, [data, inView]);
 
   useEffect(() => {
-    if (inView) {
+    if (inView && selectedConversation?.conversation && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [fetchNextPage, inView]);
 
+  // useEffect(() => {
+  //   if (inView && selectedConversation?.conversation && !isFetchingNextPage) {
+  //     if (scrollContainerRef.current) {
+  //       prevScrollHeight.current = scrollContainerRef.current.scrollHeight;
+  //       prevScrollTop.current = scrollContainerRef.current.scrollTop;
+  //     }
+  //     fetchNextPage();
+  //   }
+  // }, [fetchNextPage, inView]);
+
+  // useEffect(() => {
+  //   if (
+  //     !isFetchingNextPage &&
+  //     scrollContainerRef.current &&
+  //     !isInitialLoad.current
+  //   ) {
+  //     const newScrollHeight = scrollContainerRef.current.scrollHeight;
+  //     const heightDifference = newScrollHeight - prevScrollHeight.current;
+  //     scrollContainerRef.current.scrollTop =
+  //       prevScrollTop.current + heightDifference;
+  //   } else if (isInitialLoad.current) {
+  //     isInitialLoad.current = false;
+  //     messagesEndRef.current?.scrollIntoView({
+  //       behavior: "auto",
+  //       block: "end",
+  //     });
+  //   }
+  // }, [data, isFetchingNextPage]);
+
   const onImageClick = (imageUrl) => {
-    selectedImageUrl = imageUrl;
+    selectedImageUrl.current = imageUrl;
     setIsOpen(true);
   };
 
@@ -108,17 +121,24 @@ const Inbox = () => {
             <SpinnerBlock />
           </div>
         ) : (
-          <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+          <ul
+            ref={scrollContainerRef}
+            className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom"
+          >
             <div ref={ref} />
-            {data?.pages.map((page) =>
-              page.data.messages.map((message) => (
-                <ChatItem
-                  key={message._id}
-                  message={message}
-                  onImageClick={onImageClick}
-                />
-              ))
-            )}
+            {data?.pages
+              .toReversed()
+              .map((page) =>
+                page.data.messages
+                  .toReversed()
+                  .map((message) => (
+                    <ChatItem
+                      key={message._id}
+                      message={message}
+                      onImageClick={onImageClick}
+                    />
+                  ))
+              )}
             <div ref={messagesEndRef} />
           </ul>
         )}
@@ -132,7 +152,7 @@ const Inbox = () => {
         </div>
       </div>
       <ImagePreviewModal
-        imageUrl={selectedImageUrl}
+        imageUrl={selectedImageUrl.current}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
       />
