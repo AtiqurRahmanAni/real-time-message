@@ -1,6 +1,6 @@
 import { useAuthContext } from "../context/AuthContextProvider";
 import conversationStore from "../stores/conversationStore";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import { ChatEventEnum } from "../constants/index.js";
@@ -25,7 +25,7 @@ const Sidebar = () => {
   const selectedConversationRef = useRef(selectedConversation);
 
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
-  const setNewMessages = conversationStore((state) => state.setNewMessages);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const {
     isLoading,
@@ -79,6 +79,25 @@ const Sidebar = () => {
     selectedConversationRef.current = selectedConversation;
   }, [selectedConversation]);
 
+  useEffect(() => {
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) New messages`;
+    } else {
+      document.title = `Chat app`;
+    }
+  }, [unreadCount]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        setUnreadCount(0);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   const handleUserOnline = (onlineUsers) => {
     // onlineUsers is an array
     setOnlineUsers(onlineUsers);
@@ -109,6 +128,10 @@ const Sidebar = () => {
           "createdAt": ""
       },
     */
+
+    if (document.visibilityState === "hidden") {
+      setUnreadCount((prev) => prev + 1);
+    }
 
     const currentSelectedConversation = selectedConversationRef.current;
     /* if there is a new conversation, update the selectedConversation,

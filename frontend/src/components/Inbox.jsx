@@ -20,9 +20,9 @@ const Inbox = () => {
   const messagesEndRef = useRef(null);
   const isInitialLoad = useRef(true);
   const selectedImageUrl = useRef(null);
-  const prevScrollHeight = useRef(0);
-  const prevScrollTop = useRef(0);
   const scrollContainerRef = useRef(null);
+  // const prevScrollHeight = useRef(0);
+  // const prevScrollTop = useRef(0);
 
   const { data, fetchNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
