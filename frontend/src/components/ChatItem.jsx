@@ -14,7 +14,7 @@ const ChatItem = ({ message, onImageClick, lastSeenMessageId = null }) => {
     >
       <div>
         <div
-          className={`rounded-lg lg:max-w-[50%] ${
+          className={`rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
           }`}
         >
