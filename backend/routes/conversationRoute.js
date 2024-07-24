@@ -5,6 +5,7 @@ import {
   sendMessage,
   getMessagesByConversationId,
   updateLastSeenByParticipantId,
+  getLastSeenMessageId,
 } from "../controllers/conversationController.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { multerErrorHandling } from "../middlewares/multerError.middleware.js";
@@ -17,6 +18,7 @@ router.get(
   checkToken,
   getMessagesByConversationId
 );
+router.get("/:conversationId/user/:userId/lastmessage", getLastSeenMessageId);
 router.post(
   "/message",
   checkToken,

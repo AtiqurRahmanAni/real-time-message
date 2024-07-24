@@ -8,7 +8,6 @@ import AttachmentButton from "./AttachmentButton.jsx";
 import CloseButton from "./CloseButton.jsx";
 import toast from "react-hot-toast";
 
-let isTyping = false;
 const TextInput = ({ onSendButtonClick, disabled = false }) => {
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const [messageContent, setMessageContent] = useState("");
@@ -20,6 +19,7 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
   const selectedConversationRef = useRef(selectedConversation);
   const attachmentInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
+  const isTyping = useRef(false);
 
   useEffect(() => {
     if (!socket) return;
@@ -53,17 +53,17 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
   const handleTextInputChange = (e) => {
     setMessageContent(e.target.value);
 
-    if (!isTyping && socket) {
+    if (!isTyping.current && socket) {
       socket.emit(ChatEventEnum.TYPING_EVENT, {
         targetUserId: selectedConversation._id,
         typingUserId: user._id,
       });
-      isTyping = true;
+      isTyping.current = true;
     }
   };
 
   const handleOnBlur = () => {
-    isTyping = false;
+    isTyping.current = false;
     socket.emit(ChatEventEnum.STOP_TYPING_EVENT, {
       targetUserId: selectedConversation._id,
       typingUserId: user._id,
@@ -103,6 +103,14 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
     onSendButtonClick(formData);
     setAttachments([]);
     setMessageContent("");
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey && messageContent.trim() !== "") {
+      e.preventDefault();
+      handleSendButtonClick();
+      handleOnBlur();
+    }
   };
 
   return (
@@ -156,6 +164,7 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
             value={messageContent}
             rows={2}
             maxLength={150}
+            onKeyDown={handleKeyDown}
           />
           <div className="absolute bottom-1/2 translate-y-1/2 right-0">
             <MessageSendButton

@@ -21,7 +21,7 @@ export const initSocket = (io) => {
       ({ selectedConversationId, room }) => {
         /* when a user click on a conversation, set the count of unseen messages to 0
         and broadcast this event to that user
-      */
+        */
         io.to(room).emit(
           ChatEventEnum.MESSAGE_SEEN_EVENT,
           selectedConversationId
@@ -30,8 +30,9 @@ export const initSocket = (io) => {
     );
 
     socket.on(ChatEventEnum.TYPING_EVENT, ({ targetUserId, typingUserId }) => {
-      /* broadcasting the typing event to the target user
-       */
+      /* 
+      broadcasting the typing event to the target user
+      */
       io.to(targetUserId).emit(ChatEventEnum.TYPING_EVENT, typingUserId);
     });
 
@@ -41,6 +42,16 @@ export const initSocket = (io) => {
         /* broadcasting the stop typing event to the target user
          */
         io.to(targetUserId).emit(ChatEventEnum.STOP_TYPING_EVENT, typingUserId);
+      }
+    );
+
+    socket.on(
+      ChatEventEnum.LAST_SEEN_MESSAGE,
+      ({ lastMessageId, room, receiverId }) => {
+        io.to(room).emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
+          lastMessageId,
+          receiverId,
+        });
       }
     );
 

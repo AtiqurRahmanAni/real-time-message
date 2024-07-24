@@ -32,7 +32,7 @@ const Sidebar = () => {
     error,
     data: conversations,
   } = useFetchData(["getConversations"], `/conversation/${user._id}`, {
-    refetchInterval: 1000 * 60 * 1, // refetch sidebar data every 1 minute so that timestamp updates
+    refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
   });
 
   // for updating the last seen status of a user
@@ -53,9 +53,9 @@ const Sidebar = () => {
     },
   });
 
-  if (error) {
-    toast.error(error?.data?.message);
-  }
+  // if (error) {
+  //   toast.error(error?.data?.message);
+  // }
 
   useEffect(() => {
     if (!socket) return;
@@ -65,6 +65,7 @@ const Sidebar = () => {
     socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
     socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
+    socket.on(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
@@ -72,6 +73,7 @@ const Sidebar = () => {
       socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket.off(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
+      socket.off(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
     };
   }, [socket]);
 
@@ -232,6 +234,15 @@ const Sidebar = () => {
     // update the lastSeen of the receiver if he is in someones inbox
     if (currentSelectedConversation?._id === message.senderId) {
       updateUserLastSeenMutation.mutate(conversation._id, message.receiverId);
+
+      // emit event to the sender room to update last seen
+      if (socket) {
+        socket.emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
+          lastMessageId: message._id,
+          room: message.senderId,
+          receiverId: message.receiverId,
+        });
+      }
     }
   };
 
@@ -254,6 +265,39 @@ const Sidebar = () => {
             return item;
           }
         }),
+      };
+    });
+
+    /*
+    fire an event to the sender side to update the last seen 
+    if the last message sender is other person
+    */
+    const currentSelectedConversation = selectedConversationRef.current;
+    const cachedConversations = queryClient.getQueryData([
+      "getConversations",
+    ])?.data;
+    const lastMessage = cachedConversations?.find(
+      (item) => item._id === currentSelectedConversation._id
+    )?.lastMessage;
+
+    // emit event if the last message receiver is me
+    if (lastMessage?.receiverId === user._id) {
+      if (socket) {
+        socket.emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
+          lastMessageId: lastMessage._id,
+          room: lastMessage.senderId,
+          receiverId: lastMessage.receiverId,
+        });
+      }
+    }
+  };
+
+  const handleLastSeen = ({ lastMessageId, receiverId }) => {
+    queryClient.setQueryData(["lastSeenMessage", receiverId], (oldData) => {
+      if (!oldData) return;
+      return {
+        ...oldData,
+        data: { _id: lastMessageId },
       };
     });
   };

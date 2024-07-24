@@ -27,4 +27,6 @@ export const ChatEventEnum = Object.freeze({
   CONVERSATION_UPDATE_EVENT: "conversationUpdate",
   // ? when a user click on an inbox
   MESSAGE_SEEN_EVENT: "messageSeen",
+  // ? when a user sees a message
+  LAST_SEEN_MESSAGE: "lastSeenMessage",
 });

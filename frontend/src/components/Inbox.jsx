@@ -9,6 +9,7 @@ import SpinnerBlock from "../assets/Spinner.jsx";
 import ImagePreviewModal from "./ImagePreviewDialog.jsx";
 import ChatItem from "./ChatItem.jsx";
 import { useInView } from "react-intersection-observer";
+import useFetchData from "../hooks/useFetchData.js";
 
 const Inbox = () => {
   const selectedConversation = conversationStore(
@@ -21,8 +22,6 @@ const Inbox = () => {
   const isInitialLoad = useRef(true);
   const selectedImageUrl = useRef(null);
   const scrollContainerRef = useRef(null);
-  // const prevScrollHeight = useRef(0);
-  // const prevScrollTop = useRef(0);
 
   const { data, fetchNextPage, isFetchingNextPage, isLoading } =
     useInfiniteQuery({
@@ -58,6 +57,14 @@ const Inbox = () => {
     },
   });
 
+  const { data: lastSeenMessage } = useFetchData(
+    ["lastSeenMessage", selectedConversation._id],
+    `conversation/${selectedConversation?.conversation?._id}/user/${selectedConversation._id}/lastmessage`,
+    {
+      enabled: !!(data && selectedConversation?.conversation),
+    }
+  );
+
   useEffect(() => {
     if (isInitialLoad.current && data) {
       messagesEndRef.current?.scrollIntoView({
@@ -78,35 +85,6 @@ const Inbox = () => {
       fetchNextPage();
     }
   }, [fetchNextPage, inView]);
-
-  // useEffect(() => {
-  //   if (inView && selectedConversation?.conversation && !isFetchingNextPage) {
-  //     if (scrollContainerRef.current) {
-  //       prevScrollHeight.current = scrollContainerRef.current.scrollHeight;
-  //       prevScrollTop.current = scrollContainerRef.current.scrollTop;
-  //     }
-  //     fetchNextPage();
-  //   }
-  // }, [fetchNextPage, inView]);
-
-  // useEffect(() => {
-  //   if (
-  //     !isFetchingNextPage &&
-  //     scrollContainerRef.current &&
-  //     !isInitialLoad.current
-  //   ) {
-  //     const newScrollHeight = scrollContainerRef.current.scrollHeight;
-  //     const heightDifference = newScrollHeight - prevScrollHeight.current;
-  //     scrollContainerRef.current.scrollTop =
-  //       prevScrollTop.current + heightDifference;
-  //   } else if (isInitialLoad.current) {
-  //     isInitialLoad.current = false;
-  //     messagesEndRef.current?.scrollIntoView({
-  //       behavior: "auto",
-  //       block: "end",
-  //     });
-  //   }
-  // }, [data, isFetchingNextPage]);
 
   const onImageClick = (imageUrl) => {
     selectedImageUrl.current = imageUrl;
@@ -136,6 +114,7 @@ const Inbox = () => {
                       key={message._id}
                       message={message}
                       onImageClick={onImageClick}
+                      lastSeenMessageId={lastSeenMessage?.data?._id}
                     />
                   ))
               )}
