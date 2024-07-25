@@ -93,7 +93,7 @@ const Inbox = () => {
 
   return (
     <>
-      <div className="relative flex-1 min-h-[calc(100dvh-4.45rem)] ml-4">
+      <div className="relative flex-1 max-w-[calc(100vw-25rem)] min-h-[calc(100dvh-4.45rem)] ml-4">
         {isLoading ? (
           <div className="h-full flex justify-center items-center">
             <SpinnerBlock />

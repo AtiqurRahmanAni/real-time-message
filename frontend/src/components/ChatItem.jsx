@@ -12,7 +12,7 @@ const ChatItem = ({ message, onImageClick, lastSeenMessageId = null }) => {
         message.senderId === user._id ? "justify-end text-end" : "justify-start"
       }`}
     >
-      <div>
+      <div className="max-w-full xl:max-w-[60%] ">
         <div
           className={`rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
@@ -35,7 +35,9 @@ const ChatItem = ({ message, onImageClick, lastSeenMessageId = null }) => {
               ))}
             </div>
           )}
-          <p className={`px-2 py-1 text-white`}>{message.content}</p>
+          <div className={`px-2 py-1 text-white max-w-full`}>
+            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+          </div>
         </div>
         {lastSeenMessageId === message._id && message.senderId === user._id && (
           <div className="text-xs">Seen</div>
