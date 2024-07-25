@@ -4,7 +4,7 @@ import conversationStore from "../stores/conversationStore";
 import socketStore from "../stores/socketStore";
 import { formatTimeStamp } from "../utils/index";
 
-const SidebarItem = ({ item }) => {
+const ChatTabItem = ({ item }) => {
   // for selecting a conversation in the sidebar
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
@@ -69,4 +69,4 @@ const SidebarItem = ({ item }) => {
   );
 };
 
-export default SidebarItem;
+export default ChatTabItem;

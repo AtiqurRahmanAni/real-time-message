@@ -45,6 +45,9 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
                   {
                     $in: [userId, "$participants.participantId"],
                   },
+                  {
+                    $eq: ["$isGroupConversation", false],
+                  },
                 ],
               },
             },

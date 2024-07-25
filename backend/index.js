@@ -8,6 +8,7 @@ import authRouter from "./routes/authRoute.js";
 import userRouter from "./routes/usersRoute.js";
 import errorHandler from "./middlewares/errorHandler.middleware.js";
 import conversationRouter from "./routes/conversationRoute.js";
+import groupConversationRouter from "./routes/groupConversationRoute.js";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { initSocket } from "./socket/index.js";
@@ -68,6 +69,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/conversation", conversationRouter);
+app.use("/api/groupConversation", groupConversationRouter);
 
 app.use(errorHandler);
 

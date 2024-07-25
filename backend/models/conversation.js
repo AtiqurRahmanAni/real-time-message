@@ -1,6 +1,10 @@
 import { Schema, model } from "mongoose";
 
 const conversationSchema = new Schema({
+  conversationName: {
+    type: String,
+    required: false,
+  },
   participants: [
     {
       participantId: {
@@ -15,6 +19,10 @@ const conversationSchema = new Schema({
   ],
   lastMessageId: {
     type: Schema.Types.ObjectId,
+  },
+  isGroupConversation: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,
