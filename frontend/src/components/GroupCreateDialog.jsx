@@ -33,10 +33,7 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
   };
 
   const createGroupMutation = useMutation({
-    mutationFn: (selectedUsers) =>
-      axiosInstance.post("groupConversation/group", {
-        userIds: selectedUsers,
-      }),
+    mutationFn: (data) => axiosInstance.post("group-conversation/group", data),
     onSuccess: (response) => {
       toast.success(response.data.message);
     },
@@ -49,9 +46,17 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
 
   const closeDialog = (value) => {
     if (!createGroupMutation.isPending) {
-      setIsOpen(value);
+      setIsOpen(false);
       setSelectedUsers([]);
+      setGroupName("");
     }
+  };
+
+  const createGroup = () => {
+    createGroupMutation.mutate({
+      userIds: [user._id, ...selectedUsers],
+      groupName,
+    }); // create group including me
   };
 
   return (
@@ -126,13 +131,7 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
                     {selectedUsers.length > 0 && (
                       <Button
                         className="btn-primary text-sm"
-                        onClick={
-                          () =>
-                            createGroupMutation.mutate([
-                              user._id,
-                              ...selectedUsers,
-                            ]) // create group including me
-                        }
+                        onClick={createGroup}
                         disabled={
                           createGroupMutation.isPending || groupName === ""
                         }

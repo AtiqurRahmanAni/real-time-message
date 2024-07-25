@@ -106,7 +106,7 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
       },
     },
     {
-      $sort: { lastMessage: -1 },
+      $sort: { "lastMessage.createdAt": -1 },
     },
     {
       $project: {

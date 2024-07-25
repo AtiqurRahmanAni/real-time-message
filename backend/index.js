@@ -69,7 +69,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/conversation", conversationRouter);
-app.use("/api/groupConversation", groupConversationRouter);
+app.use("/api/group-conversation", groupConversationRouter);
 
 app.use(errorHandler);
 

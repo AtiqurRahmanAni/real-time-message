@@ -7,6 +7,7 @@ const conversationSchema = new Schema({
   },
   participants: [
     {
+      _id: false,
       participantId: {
         type: Schema.Types.ObjectId,
         required: true,
