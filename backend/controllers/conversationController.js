@@ -96,7 +96,7 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
               $expr: {
                 $and: [
                   { $eq: ["$conversationId", "$$conversationId"] },
-                  { $gte: ["$createdAt", "$$lastSeenTime"] },
+                  { $gt: ["$createdAt", "$$lastSeenTime"] },
                 ],
               },
             },

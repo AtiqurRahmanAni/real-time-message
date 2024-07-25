@@ -30,3 +30,8 @@ export const ChatEventEnum = Object.freeze({
   // ? when a user sees a message
   LAST_SEEN_MESSAGE: "lastSeenMessage",
 });
+
+export const GroupChatEventEnum = Object.freeze({
+  // ? when new message is received
+  GROUP_MESSAGE_RECEIVED_EVENT: "groupMessageReceived",
+});

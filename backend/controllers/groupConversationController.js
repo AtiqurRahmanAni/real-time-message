@@ -1,10 +1,15 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import Conversation from "../models/conversation.js";
 import mongoose from "mongoose";
-import { BadRequestError, InternalServerError } from "../utils/errors.js";
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+} from "../utils/errors.js";
 import GroupMessage from "../models/groupMessage.js";
+import { GroupChatEventEnum } from "../constants/index.js";
 
-export const getGroupByParticipantId = asyncHandler(async (req, res) => {
+export const getGroupsByParticipantId = asyncHandler(async (req, res) => {
   let { participantId } = req.params;
   participantId = new mongoose.Types.ObjectId(participantId);
 
@@ -34,12 +39,9 @@ export const getGroupByParticipantId = asyncHandler(async (req, res) => {
             groupId: "$_id",
             lastSeenTime: {
               $arrayElemAt: [
-                "$conversation.participants.lastSeenTime",
+                "$participants.lastSeenTime",
                 {
-                  $indexOfArray: [
-                    "$conversation.participants.participantId",
-                    participantId,
-                  ],
+                  $indexOfArray: ["$participants.participantId", participantId],
                 },
               ],
             },
@@ -50,13 +52,13 @@ export const getGroupByParticipantId = asyncHandler(async (req, res) => {
                 $expr: {
                   $and: [
                     { $eq: ["$groupId", "$$groupId"] },
-                    { $gte: ["$createdAt", "$$lastSeenTime"] },
+                    { $gt: ["$createdAt", "$$lastSeenTime"] },
                   ],
                 },
               },
             },
           ],
-          as: "groupMessages",
+          as: "messages",
         },
       },
       {
@@ -77,7 +79,7 @@ export const getGroupByParticipantId = asyncHandler(async (req, res) => {
             attachments: 1,
             createdAt: 1,
           },
-          unseenCount: { $size: "$groupMessages" },
+          unseenCount: { $size: "$messages" },
         },
       },
     ]);
@@ -86,6 +88,21 @@ export const getGroupByParticipantId = asyncHandler(async (req, res) => {
   } catch (err) {
     console.error(`Error fetching groups: ${err}`);
     throw new BadRequestError("Error fetching groups");
+  }
+});
+
+export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
+  let { groupId } = req.params;
+  groupId = new mongoose.Types.ObjectId(groupId);
+
+  try {
+    const messages = await GroupMessage.find({ groupId }).select({
+      __v: false,
+    });
+    return res.status(200).send(messages);
+  } catch (err) {
+    console.error(`Error fetching group messages: ${err}`);
+    throw new InternalServerError("Error fetching group messages");
   }
 });
 
@@ -111,16 +128,37 @@ export const createGroupByUserIds = asyncHandler(async (req, res) => {
 
 export const sendGroupMessage = asyncHandler(async (req, res) => {
   let { groupId } = req.params;
-  let { content, senderId, receiverIds } = req.body;
+  let { content, senderId } = req.body;
   groupId = new mongoose.Types.ObjectId(groupId);
   senderId = new mongoose.Types.ObjectId(senderId);
-  receiverIds = receiverIds?.map((id) => new mongoose.Types.ObjectId(id));
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
 
-    const newMessage = await GroupMessage.create(
+    const group = await Conversation.findOne({
+      _id: groupId,
+      isGroupConversation: true,
+    })
+      .select({ participants: true, lastMessageId: true })
+      .session(session);
+
+    if (!group) {
+      throw new NotFoundError("Group not found");
+    }
+
+    let receiverIds = [];
+    let indexOfSender = -1;
+    for (let i = 0; i < group.participants.length; i++) {
+      const participantId = group.participants[i].participantId;
+      if (participantId.toString() !== senderId.toString()) {
+        receiverIds.push(participantId);
+      } else {
+        indexOfSender = i;
+      }
+    }
+
+    let newMessage = await GroupMessage.create(
       [
         {
           groupId,
@@ -131,25 +169,34 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
       ],
       { session }
     );
+    newMessage = newMessage[0];
 
-    console.log(newMessage);
+    group.participants[indexOfSender].lastSeenTime = new Date();
+    group.lastMessageId = newMessage._id;
 
-    const group = await Conversation.findOneAndUpdate(
-      {
-        _id: groupId,
-        isGroupConversation: true,
-        "participants.participantId": senderId,
-      },
-      {
-        $set: {
-          "participants.$.lastSeenTime": new Date(),
-          lastMessageId: newMessage[0]._id, //newMessage is an array
-        },
-      },
-      { new: true, session }
-    );
+    await group.save({ session });
 
     await session.commitTransaction();
+
+    // emit message receive event to the group members
+    group.participants.forEach((participant) => {
+      req.app
+        .get("io")
+        .in(participant.participantId.toString())
+        .emit(GroupChatEventEnum.GROUP_MESSAGE_RECEIVED_EVENT, {
+          group: {
+            _id: group._id,
+          },
+          message: {
+            _id: newMessage._id,
+            content: newMessage.content,
+            senderId: newMessage.senderId,
+            receiverIds: newMessage.receiverIds,
+            attachments: newMessage.attachments,
+            createdAt: newMessage.createdAt,
+          },
+        });
+    });
 
     return res.status(200).json({ message: "Message sent" });
   } catch (err) {

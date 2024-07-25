@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { IoMdAddCircleOutline } from "react-icons/io";
 import GroupCreateDialog from "./GroupCreateDialog";
+import GroupTabItem from "./GroupTabItem";
 
-const GroupChatTab = () => {
+const GroupChatTab = ({ groups }) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>
@@ -17,7 +18,9 @@ const GroupChatTab = () => {
           </button>
         </div>
         <ul className="border border-r-gray-300 w-56">
-          <li>Hello</li>
+          {groups?.map((item) => (
+            <GroupTabItem key={item._id} item={item} />
+          ))}
         </ul>
       </div>
       <GroupCreateDialog isOpen={isOpen} setIsOpen={setIsOpen} />

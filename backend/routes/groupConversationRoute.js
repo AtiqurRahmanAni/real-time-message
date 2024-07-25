@@ -1,14 +1,28 @@
 import express from "express";
 import {
   createGroupByUserIds,
-  getGroupByParticipantId,
+  getGroupMessagesByGroupId,
+  getGroupsByParticipantId,
   sendGroupMessage,
 } from "../controllers/groupConversationController.js";
 import checkToken from "../middlewares/token.middleware.js";
+import { upload } from "../middlewares/multer.middleware.js";
+import { multerErrorHandling } from "../middlewares/multerError.middleware.js";
 
 const router = express.Router();
 
-router.get("/group/:participantId", checkToken, getGroupByParticipantId);
+router.get(
+  "/group/participant/:participantId",
+  checkToken,
+  getGroupsByParticipantId
+);
+router.get("/group/:groupId/message", checkToken, getGroupMessagesByGroupId);
 router.post("/group", checkToken, createGroupByUserIds);
-router.post("/group/:groupId/message", checkToken, sendGroupMessage);
+router.post(
+  "/group/:groupId/message",
+  checkToken,
+  upload.fields([{ name: "attachments", maxCount: 6 }]),
+  multerErrorHandling,
+  sendGroupMessage
+);
 export default router;

@@ -31,6 +31,11 @@ export const ChatEventEnum = Object.freeze({
   LAST_SEEN_MESSAGE: "lastSeenMessage",
 });
 
+export const GroupChatEventEnum = Object.freeze({
+  // ? when new message is received
+  GROUP_MESSAGE_RECEIVED_EVENT: "groupMessageReceived",
+});
+
 export const ChatRoomEnum = Object.freeze({
   NEW_USER_ROOM: "new-user-room",
 });

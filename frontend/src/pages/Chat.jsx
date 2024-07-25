@@ -8,14 +8,16 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthContext } from "../context/AuthContextProvider";
 import socketStore from "../stores/socketStore";
 import useFetchData from "../hooks/useFetchData";
-import { ChatEventEnum } from "../constants";
+import { ChatEventEnum, GroupChatEventEnum } from "../constants";
 import axiosInstance from "../utils/axiosInstance";
+import groupStore from "../stores/groupStore";
+import GroupInbox from "../components/GroupInbox";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const [selectedTab, setSelectedTab] = useState(0); // 0 for chat, 1 for group chat
+  const [selectedTab, setSelectedTab] = useState(1); // 0 for chat, 1 for group chat
   const queryClient = useQueryClient();
 
   const { user } = useAuthContext();
@@ -26,19 +28,20 @@ const Chat = () => {
   );
   const selectedConversationRef = useRef(selectedConversation);
 
+  const selectedGroup = groupStore((state) => state.selectedGroup);
+  const selectedGroupRef = useRef(selectedGroup);
+
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
   const [unreadCount, setUnreadCount] = useState(0);
 
   // --------------- for one to one chat ------------------ //
-  const {
-    isLoading,
-    error,
-    data: conversations,
-  } = useFetchData(["getConversations"], `/conversation/${user._id}`, {
-    refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
-    staleTime: Infinity,
-    cacheTime: 1000 * 60 * 60 * 24,
-  });
+  const { data: conversations } = useFetchData(
+    ["getConversations"],
+    `/conversation/${user._id}`,
+    {
+      refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
+    }
+  );
 
   // for updating the last seen status of a user
   const updateUserLastSeenMutation = useMutation({
@@ -58,6 +61,7 @@ const Chat = () => {
     },
   });
 
+  // socket configuration
   useEffect(() => {
     if (!socket) return;
 
@@ -68,6 +72,12 @@ const Chat = () => {
     socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
     socket.on(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
 
+    // for group chat
+    socket.on(
+      GroupChatEventEnum.GROUP_MESSAGE_RECEIVED_EVENT,
+      onGroupMessageReceive
+    );
+
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
       socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
@@ -75,12 +85,20 @@ const Chat = () => {
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket.off(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
       socket.off(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
+
+      // for group chat
+      socket.on(
+        GroupChatEventEnum.GROUP_MESSAGE_RECEIVED_EVENT,
+        onGroupMessageReceive
+      );
     };
   }, [socket]);
 
+  // refer to the latest value of selected conversation and group
   useEffect(() => {
     selectedConversationRef.current = selectedConversation;
-  }, [selectedConversation]);
+    selectedGroupRef.current = selectedGroup;
+  }, [selectedConversation, selectedGroup]);
 
   useEffect(() => {
     if (unreadCount > 0) {
@@ -303,6 +321,76 @@ const Chat = () => {
     });
   };
 
+  //------------- for group conversation --------------//
+  const {
+    data: groups,
+    isLoading: isGroupLoading,
+    error: groupFetchError,
+  } = useFetchData(
+    ["getGroups"],
+    `group-conversation/group/participant/${user._id}`,
+    {
+      refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
+    }
+  );
+
+  const onGroupMessageReceive = ({ group, message }) => {
+    const currentSelectedGroup = selectedGroupRef.current;
+
+    // update the group tab last message
+    queryClient.setQueryData(["getGroups"], (oldData) => {
+      if (!oldData) return;
+
+      let groups = [];
+      let latestItem = null;
+
+      for (let i = 0; i < oldData?.data?.length; i++) {
+        let cachedGroup = oldData?.data[i];
+        // assign the message incoming group in a separate variable
+        if (group._id === cachedGroup._id) {
+          latestItem = {
+            ...cachedGroup,
+            // if user is in the incoming message group, then set unseen count to 0
+            lastMessage: message,
+            unseenCount:
+              currentSelectedGroup?._id === group._id
+                ? 0
+                : cachedGroup.unseenCount + 1,
+          };
+        } else {
+          groups.push({
+            ...cachedGroup,
+            // if user is in the incoming message group, then set unseen count to 0
+            unseenCount:
+              currentSelectedGroup?._id === group._id
+                ? 0
+                : cachedGroup.unseenCount + 1,
+          });
+        }
+        groups.unshift(latestItem);
+
+        return {
+          ...oldData,
+          data: groups,
+        };
+      }
+    });
+
+    // update the group inbox if user is in the incoming message group
+    if (currentSelectedGroup?._id === group._id) {
+      queryClient.setQueryData(
+        ["getGroupMessages", currentSelectedGroup._id],
+        (oldData) => {
+          if (!oldData) return;
+          return {
+            ...oldData,
+            data: [...oldData.data, message],
+          };
+        }
+      );
+    }
+  };
+
   return (
     <div className="container">
       <div className="flex">
@@ -320,14 +408,16 @@ const Chat = () => {
             />
           </div>
           {selectedTab === 0 && <ChatTab conversations={conversations?.data} />}
-          {selectedTab === 1 && <GroupChatTab />}
+          {selectedTab === 1 && <GroupChatTab groups={groups?.data} />}
         </div>
         {selectedConversation ? (
           <Inbox />
+        ) : selectedGroup ? (
+          <GroupInbox />
         ) : (
           <div className="relative flex-1 min-h-[calc(100dvh-3.5rem)] flex justify-center items-center">
             <h1 className="font-semibold text-gray-500 text-2xl">
-              Select a conversation to start
+              Select a conversation or group to start
             </h1>
           </div>
         )}

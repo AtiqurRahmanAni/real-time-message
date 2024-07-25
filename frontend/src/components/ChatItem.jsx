@@ -1,7 +1,12 @@
 import React from "react";
 import { useAuthContext } from "../context/AuthContextProvider";
 
-const ChatItem = ({ message, onImageClick, lastSeenMessageId = null }) => {
+const ChatItem = ({
+  message,
+  onImageClick,
+  senderName = null,
+  lastSeenMessageId = null,
+}) => {
   const { user } = useAuthContext();
 
   return (
@@ -13,6 +18,7 @@ const ChatItem = ({ message, onImageClick, lastSeenMessageId = null }) => {
       }`}
     >
       <div className="max-w-full xl:max-w-[60%] ">
+        {senderName && <div className="text-xs ml-1">{senderName}</div>}
         <div
           className={`rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"

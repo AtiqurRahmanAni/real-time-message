@@ -1,17 +1,20 @@
 import { ChatEventEnum } from "../constants";
 import { useAuthContext } from "../context/AuthContextProvider";
 import conversationStore from "../stores/conversationStore";
+import groupStore from "../stores/groupStore";
 import socketStore from "../stores/socketStore";
 import { formatTimeStamp } from "../utils/index";
 
 const ChatTabItem = ({ item }) => {
-  // for selecting a conversation in the sidebar
+  // for selecting a conversation
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
   const setSelectedConversation = conversationStore(
     (state) => state.setSelectedConversation
   );
+  const setSelectedGroup = groupStore((state) => state.setSelectedGroup);
+
   const socket = socketStore((state) => state.socket);
 
   // online users state
@@ -21,6 +24,8 @@ const ChatTabItem = ({ item }) => {
   const onConversationSelect = (item) => {
     if (selectedConversation?._id !== item._id) {
       setSelectedConversation(item);
+      // when the user select a one to one conversation, unselect the group
+      setSelectedGroup(null);
       if (socket && item.conversation) {
         socket.emit(ChatEventEnum.MESSAGE_SEEN_EVENT, {
           selectedConversationId: item.conversation._id,
@@ -32,7 +37,6 @@ const ChatTabItem = ({ item }) => {
 
   return (
     <li
-      key={item._id}
       className={`relative px-4 py-2 border border-b-gray-300 hover:bg-gray-200 cursor-pointer ${
         item._id === selectedConversation?._id ? "bg-gray-300" : ""
       }`}
