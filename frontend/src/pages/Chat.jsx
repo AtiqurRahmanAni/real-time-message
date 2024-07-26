@@ -226,11 +226,7 @@ const Chat = () => {
     if there is an inbox open, only then update the cache,
     it will rerender the inbox and show new messages.
     */
-    if (
-      currentSelectedConversation &&
-      (currentSelectedConversation._id === message.senderId ||
-        currentSelectedConversation._id === message.receiverId)
-    ) {
+    if (currentSelectedConversation) {
       queryClient.setQueryData(
         ["getMessages", currentSelectedConversation._id],
         (oldData) => {
@@ -283,7 +279,7 @@ const Chat = () => {
 
     /*
     fire an event to the sender side to update the last seen 
-    if the last message sender is other person
+    message if the last message sender is other person
     */
     const currentSelectedConversation = selectedConversationRef.current;
     const cachedConversations = queryClient.getQueryData([
@@ -349,6 +345,10 @@ const Chat = () => {
 
   const onGroupMessageReceive = ({ group, message }) => {
     const currentSelectedGroup = selectedGroupRef.current;
+
+    if (document.visibilityState === "hidden") {
+      setUnreadCount((prev) => prev + 1);
+    }
 
     // update the group tab last message
     queryClient.setQueryData(["getGroups"], (oldData) => {

@@ -144,6 +144,37 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   return res.status(200).send(messages.reverse());
 });
 
+export const getLastSeenMessageId = asyncHandler(async (req, res) => {
+  let { conversationId, userId } = req.params;
+  conversationId = new mongoose.Types.ObjectId(conversationId);
+  userId = new mongoose.Types.ObjectId(userId);
+
+  const response = await Conversation.aggregate([
+    { $match: { _id: conversationId } },
+    { $unwind: "$participants" },
+    {
+      $match: {
+        "participants.participantId": userId,
+      },
+    },
+    { $project: { _id: false, lastSeenTime: "$participants.lastSeenTime" } },
+  ]);
+
+  if (response.length > 0) {
+    const lastSeenTime = response[0].lastSeenTime;
+    const messageId = await Message.findOne({
+      conversationId,
+      createdAt: { $lte: lastSeenTime },
+      receiverId: userId,
+    })
+      .sort({ createdAt: -1 })
+      .select({ _id: true });
+
+    return res.status(200).send(messageId);
+  }
+  throw new NotFoundError("Last seen time not found");
+});
+
 export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
   const { conversationId, participantId } = req.body;
 
@@ -280,34 +311,4 @@ export const sendMessage = asyncHandler(async (req, res) => {
       deleteFiles(attachments.map((item) => item.path));
     }
   }
-});
-
-export const getLastSeenMessageId = asyncHandler(async (req, res) => {
-  let { conversationId, userId } = req.params;
-  conversationId = new mongoose.Types.ObjectId(conversationId);
-  userId = new mongoose.Types.ObjectId(userId);
-
-  const response = await Conversation.aggregate([
-    { $match: { _id: conversationId } },
-    { $unwind: "$participants" },
-    {
-      $match: {
-        "participants.participantId": userId,
-      },
-    },
-    { $project: { _id: false, lastSeenTime: "$participants.lastSeenTime" } },
-  ]);
-
-  if (response.length > 0) {
-    const lastSeenTime = response[0].lastSeenTime;
-    const messageId = await Message.findOne({
-      conversationId,
-      createdAt: { $lte: lastSeenTime },
-    })
-      .sort({ createdAt: -1 })
-      .select({ _id: true });
-
-    return res.status(200).send(messageId);
-  }
-  throw new NotFoundError("Last seen time not found");
 });

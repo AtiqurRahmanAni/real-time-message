@@ -18,7 +18,7 @@ router.get(
   checkToken,
   getMessagesByConversationId
 );
-router.get("/:conversationId/user/:userId/lastmessage", getLastSeenMessageId);
+router.get("/:conversationId/user/:userId/last-message", getLastSeenMessageId);
 router.post(
   "/message",
   checkToken,

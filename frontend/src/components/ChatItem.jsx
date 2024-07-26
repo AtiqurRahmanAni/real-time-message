@@ -9,6 +9,9 @@ const ChatItem = ({
 }) => {
   const { user } = useAuthContext();
 
+  // console.log(message);
+  // console.log(lastSeenMessageId);
+
   return (
     <li
       data-id={message._id}

@@ -67,7 +67,7 @@ const Inbox = () => {
 
   const { data: lastSeenMessage } = useFetchData(
     ["lastSeenMessage", selectedConversation._id],
-    `conversation/${selectedConversation?.conversation?._id}/user/${selectedConversation._id}/lastmessage`,
+    `conversation/${selectedConversation?.conversation?._id}/user/${selectedConversation._id}/last-message`,
     {
       enabled: !!(messages && selectedConversation?.conversation),
     }
