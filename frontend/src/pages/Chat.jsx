@@ -17,7 +17,7 @@ const Chat = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const [selectedTab, setSelectedTab] = useState(1); // 0 for chat, 1 for group chat
+  const [selectedTab, setSelectedTab] = useState(0); // 0 for chat, 1 for group chat
   const queryClient = useQueryClient();
 
   const { user } = useAuthContext();
@@ -77,6 +77,8 @@ const Chat = () => {
       GroupChatEventEnum.GROUP_MESSAGE_RECEIVED_EVENT,
       onGroupMessageReceive
     );
+    socket.on(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, onGroupMessageSeen);
+    socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
@@ -87,10 +89,15 @@ const Chat = () => {
       socket.off(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
 
       // for group chat
-      socket.on(
+      socket.off(
         GroupChatEventEnum.GROUP_MESSAGE_RECEIVED_EVENT,
         onGroupMessageReceive
       );
+      socket.off(
+        GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT,
+        onGroupMessageSeen
+      );
+      socket.off(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
     };
   }, [socket]);
 
@@ -155,8 +162,9 @@ const Chat = () => {
     }
 
     const currentSelectedConversation = selectedConversationRef.current;
-    /* if there is a new conversation, update the selectedConversation,
-      because conversation and lastMessage is null if users do not exchange any messages 
+    /* 
+    if there is a new conversation, update the selectedConversation,
+    because conversation and lastMessage is null if users do not exchange any messages 
     */
     if (
       currentSelectedConversation &&
@@ -171,8 +179,9 @@ const Chat = () => {
       });
     }
 
-    /* update the sidebar last message and last message timestamp when a new message is received
-       increment the unseen count for the unselected conversations
+    /* 
+    update the sidebar last message and last message timestamp when a new message 
+    is received increment the unseen count for the unselected conversations
     */
     queryClient.setQueryData(["getConversations"], (oldData) => {
       if (!oldData) return null;
@@ -185,16 +194,17 @@ const Chat = () => {
         if (item._id === message.senderId || item._id === message.receiverId) {
           latestItem = {
             ...item,
-            /* if the message receiver is in other users' inbox, then increment 
-            the count of unseen messages except the selected conversation */
+            conversation: conversation,
+            lastMessage: message,
+            /* 
+            if the message receiver is in other users' inbox, then increment 
+            the count of unseen messages except the selected conversation 
+            */
             unseenCount:
               currentSelectedConversation?._id !== message.senderId &&
               message.senderId !== user._id
                 ? item.unseenCount + 1
                 : item.unseenCount,
-
-            conversation: conversation,
-            lastMessage: message,
           };
         } else {
           items.push(item);
@@ -212,8 +222,9 @@ const Chat = () => {
       };
     });
 
-    /* if there is an inbox open, only then update the cache,
-      it will rerender the inbox and show new messages.
+    /* 
+    if there is an inbox open, only then update the cache,
+    it will rerender the inbox and show new messages.
     */
     if (
       currentSelectedConversation &&
@@ -225,26 +236,9 @@ const Chat = () => {
         (oldData) => {
           if (!oldData) return;
 
-          const updatedMessages = [message, ...oldData.pages[0].data.messages];
-
-          // Create a new pages array with the first page updated with the new messages array
-          const updatedPages = oldData.pages.map((page, index) => {
-            if (index === 0) {
-              return {
-                ...page,
-                data: {
-                  ...page.data,
-                  messages: updatedMessages,
-                },
-              };
-            }
-            return page;
-          });
-
-          // Return a new data object with the updated pages array
           return {
             ...oldData,
-            pages: updatedPages,
+            data: [...oldData.data, message],
           };
         }
       );
@@ -254,7 +248,7 @@ const Chat = () => {
     if (currentSelectedConversation?._id === message.senderId) {
       updateUserLastSeenMutation.mutate(conversation._id, message.receiverId);
 
-      // emit event to the sender room to update last seen
+      // emit event to the sender room to update the last seen message
       if (socket) {
         socket.emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
           lastMessageId: message._id,
@@ -271,7 +265,7 @@ const Chat = () => {
 
     // set the unseenCount to 0
     queryClient.setQueryData(["getConversations"], (oldData) => {
-      if (!oldData) return null;
+      if (!oldData) return;
       return {
         ...oldData,
         data: oldData?.data?.map((item) => {
@@ -334,6 +328,25 @@ const Chat = () => {
     }
   );
 
+  const updateUserGroupLastSeenMutation = useMutation({
+    mutationFn: (groupId) => {
+      return axiosInstance.patch(
+        `group-conversation/group/${groupId}/last-seen`,
+        {
+          participantId: user._id,
+        }
+      );
+    },
+    onSuccess: (response) => {
+      // toast.success(response.data.message);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+    },
+  });
+
   const onGroupMessageReceive = ({ group, message }) => {
     const currentSelectedGroup = selectedGroupRef.current;
 
@@ -350,30 +363,26 @@ const Chat = () => {
         if (group._id === cachedGroup._id) {
           latestItem = {
             ...cachedGroup,
-            // if user is in the incoming message group, then set unseen count to 0
             lastMessage: message,
+            /*
+            if user is not currently in the incoming message group, 
+            then increment the unseen count
+            */
             unseenCount:
-              currentSelectedGroup?._id === group._id
-                ? 0
-                : cachedGroup.unseenCount + 1,
+              currentSelectedGroup?._id !== group._id
+                ? cachedGroup.unseenCount + 1
+                : cachedGroup.unseenCount,
           };
         } else {
-          groups.push({
-            ...cachedGroup,
-            // if user is in the incoming message group, then set unseen count to 0
-            unseenCount:
-              currentSelectedGroup?._id === group._id
-                ? 0
-                : cachedGroup.unseenCount + 1,
-          });
+          groups.push(cachedGroup);
         }
-        groups.unshift(latestItem);
-
-        return {
-          ...oldData,
-          data: groups,
-        };
       }
+      groups.unshift(latestItem);
+
+      return {
+        ...oldData,
+        data: groups,
+      };
     });
 
     // update the group inbox if user is in the incoming message group
@@ -389,6 +398,39 @@ const Chat = () => {
         }
       );
     }
+
+    /* 
+    update last seen of a user in the group if 
+    he is currently in the incoming message group
+    */
+    if (currentSelectedGroup?._id === group._id) {
+      updateUserGroupLastSeenMutation.mutate(group._id);
+    }
+  };
+
+  const onGroupMessageSeen = (groupId) => {
+    // update last seen time of the user
+    updateUserGroupLastSeenMutation.mutate(groupId);
+
+    queryClient.setQueryData(["getGroups"], (oldData) => {
+      if (!oldData) return;
+      return {
+        ...oldData,
+        // set the unseen count to 0 if the user click on a group
+        data: oldData?.data?.map((item) => {
+          if (item._id === groupId) {
+            return { ...item, unseenCount: 0 };
+          } else {
+            return item;
+          }
+        }),
+      };
+    });
+  };
+
+  // if new group is created or deleted, fetch the groups again
+  const onGroupUpdate = () => {
+    queryClient.invalidateQueries({ queryKey: ["getGroups"] });
   };
 
   return (

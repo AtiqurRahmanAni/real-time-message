@@ -1,8 +1,7 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import useFetchData from "../hooks/useFetchData";
 import groupStore from "../stores/groupStore";
 import ChatItem from "./ChatItem";
-import TextInput from "./TextInput";
 import SpinnerBlock from "../assets/Spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthContext } from "../context/AuthContextProvider";
@@ -11,7 +10,6 @@ import axiosInstance from "../utils/axiosInstance";
 
 const GroupInbox = () => {
   const selectedGroup = groupStore((state) => state.selectedGroup);
-  const isInitialLoad = useRef(true);
   const messagesEndRef = useRef(null);
   const { user } = useAuthContext();
 
@@ -54,6 +52,13 @@ const GroupInbox = () => {
       }
     },
   });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "auto",
+      block: "end",
+    });
+  }, [groupMessages]);
 
   const onImageClick = (imageUrl) => {
     console.log(imageUrl);

@@ -34,6 +34,10 @@ export const ChatEventEnum = Object.freeze({
 export const GroupChatEventEnum = Object.freeze({
   // ? when new message is received
   GROUP_MESSAGE_RECEIVED_EVENT: "groupMessageReceived",
+  // ? when a user click on an group
+  GROUP_MESSAGE_SEEN_EVENT: "groupMessageSeen",
+  // ? groups update event, if a group is deleted to crated
+  GROUP_UPDATE_EVENT: "groupUpdateEvent",
 });
 
 export const ChatRoomEnum = Object.freeze({

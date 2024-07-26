@@ -1,11 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import Conversation from "../models/conversation.js";
 import mongoose from "mongoose";
-import {
-  BadRequestError,
-  InternalServerError,
-  NotFoundError,
-} from "../utils/errors.js";
+import { BadRequestError, InternalServerError } from "../utils/errors.js";
 import GroupMessage from "../models/groupMessage.js";
 import { GroupChatEventEnum } from "../constants/index.js";
 
@@ -96,10 +92,13 @@ export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
   groupId = new mongoose.Types.ObjectId(groupId);
 
   try {
-    const messages = await GroupMessage.find({ groupId }).select({
-      __v: false,
-    });
-    return res.status(200).send(messages);
+    const messages = await GroupMessage.find({ groupId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select({
+        __v: false,
+      });
+    return res.status(200).send(messages.reverse());
   } catch (err) {
     console.error(`Error fetching group messages: ${err}`);
     throw new InternalServerError("Error fetching group messages");
@@ -107,22 +106,31 @@ export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
 });
 
 export const createGroupByUserIds = asyncHandler(async (req, res) => {
-  const { userIds, groupName } = req.body;
+  let { userIds, groupName } = req.body;
+  userIds = userIds.map((id) => new mongoose.Types.ObjectId(id));
 
   try {
     const newConversation = await Conversation.create({
       conversationName: groupName,
       participants: userIds.map((id) => ({
-        participantId: new mongoose.Types.ObjectId(id),
+        participantId: id,
         lastSeenTime: new Date("1995-12-17T00:00:00"),
       })),
       isGroupConversation: true,
     });
 
+    // emit event to the group participants
+    userIds.forEach((id) => {
+      req.app
+        .get("io")
+        .in(id.toString())
+        .emit(GroupChatEventEnum.GROUP_UPDATE_EVENT);
+    });
+
     return res.status(201).json({ message: "Group created" });
   } catch (err) {
     console.error(`Error creating group: ${err}`);
-    throw new BadRequestError("Error creating group");
+    throw new InternalServerError("Error creating group");
   }
 });
 
@@ -142,10 +150,6 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     })
       .select({ participants: true, lastMessageId: true })
       .session(session);
-
-    if (!group) {
-      throw new NotFoundError("Group not found");
-    }
 
     let receiverIds = [];
     let indexOfSender = -1;
@@ -205,5 +209,28 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     throw new InternalServerError("Error sending group message");
   } finally {
     session.endSession();
+  }
+});
+
+export const updateLastSeenByGroupId = asyncHandler(async (req, res) => {
+  const { participantId } = req.body;
+  const { groupId } = req.params;
+  try {
+    const result = await Conversation.updateOne(
+      {
+        _id: new mongoose.Types.ObjectId(groupId),
+        "participants.participantId": new mongoose.Types.ObjectId(
+          participantId
+        ),
+      },
+      {
+        $set: { "participants.$.lastSeenTime": new Date() },
+      }
+    );
+
+    return res.status(200).json({ message: "Last seen updated" });
+  } catch (err) {
+    console.error(`Error updating group last seen: ${err}`);
+    throw new InternalServerError("Something went wrong updating seen status");
   }
 });

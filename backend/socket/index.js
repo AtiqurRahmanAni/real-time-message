@@ -1,4 +1,8 @@
-import { ChatEventEnum, ChatRoomEnum } from "../constants/index.js";
+import {
+  ChatEventEnum,
+  ChatRoomEnum,
+  GroupChatEventEnum,
+} from "../constants/index.js";
 
 const onlineUsers = new Set();
 
@@ -19,12 +23,27 @@ export const initSocket = (io) => {
     socket.on(
       ChatEventEnum.MESSAGE_SEEN_EVENT,
       ({ selectedConversationId, room }) => {
-        /* when a user click on a conversation, set the count of unseen messages to 0
-        and broadcast this event to that user
+        /* 
+        when a user click on a conversation, set the count of unseen 
+        messages to 0 and broadcast this event to that user
         */
         io.to(room).emit(
           ChatEventEnum.MESSAGE_SEEN_EVENT,
           selectedConversationId
+        );
+      }
+    );
+
+    socket.on(
+      GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT,
+      ({ selectedGroupId, room }) => {
+        /* 
+        when a user click on a group, set the count of unseen 
+        messages to 0 and broadcast this event to that user
+        */
+        io.to(room).emit(
+          GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT,
+          selectedGroupId
         );
       }
     );

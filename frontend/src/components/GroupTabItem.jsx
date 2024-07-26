@@ -3,6 +3,9 @@ import { formatTimeStamp } from "../utils";
 import { useAuthContext } from "../context/AuthContextProvider";
 import groupStore from "../stores/groupStore";
 import conversationStore from "../stores/conversationStore";
+import socketStore from "../stores/socketStore";
+import { GroupChatEventEnum } from "../constants";
+import { useMutation } from "@tanstack/react-query";
 
 const GroupTabItem = ({ item }) => {
   // for selecting a group
@@ -11,13 +14,27 @@ const GroupTabItem = ({ item }) => {
   const setSelectedConversation = conversationStore(
     (state) => state.setSelectedConversation
   );
+  const socket = socketStore((state) => state.socket);
 
   const { user } = useAuthContext();
 
-  const onGroupSelect = (selectedGroup) => {
-    setSelectedGroup(selectedGroup);
+  const onGroupSelect = (newSelectedGroup) => {
+    setSelectedGroup(newSelectedGroup);
     // when the user select a group unselect the one to one conversation
     setSelectedConversation(null);
+
+    if (
+      socket &&
+      newSelectedGroup?.lastMessage &&
+      newSelectedGroup?.lastMessage?.senderId !== user._id &&
+      newSelectedGroup._id !== selectedGroup?._id
+    ) {
+      // emit an event to the current user room to set unseen count
+      socket.emit(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, {
+        selectedGroupId: newSelectedGroup._id,
+        room: user._id,
+      });
+    }
   };
 
   return (

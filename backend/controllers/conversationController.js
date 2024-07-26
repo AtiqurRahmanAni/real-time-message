@@ -133,25 +133,15 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
 
 export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
-  const { pageNo = 1, pageSize = 10 } = req.query;
-
-  const page = parseInt(pageNo);
-  const size = parseInt(pageSize);
-
-  const totalCount = await Message.countDocuments({ conversationId });
-  const totalPages = Math.ceil(totalCount / pageSize);
 
   const messages = await Message.find({ conversationId })
     .sort({ createdAt: -1 })
-    .skip((page - 1) * size)
-    .limit(size)
+    .limit(20)
     .select({
       __v: false,
     });
 
-  return res
-    .status(200)
-    .json({ messages, nextPage: page + 1 <= totalPages ? page + 1 : null });
+  return res.status(200).send(messages.reverse());
 });
 
 export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
@@ -170,7 +160,7 @@ export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
       }
     );
 
-    return res.status(200).json({ message: "Set seen successful" });
+    return res.status(200).json({ message: "Last seen updated" });
   } catch (err) {
     console.error(`Error updating seen status: ${err}`);
     throw new InternalServerError("Something went wrong updating seen status");

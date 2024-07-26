@@ -5,6 +5,7 @@ import GroupTabItem from "./GroupTabItem";
 
 const GroupChatTab = ({ groups }) => {
   const [isOpen, setIsOpen] = useState(false);
+
   return (
     <>
       <div>
