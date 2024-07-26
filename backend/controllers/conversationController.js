@@ -149,28 +149,48 @@ export const getLastSeenMessageId = asyncHandler(async (req, res) => {
   conversationId = new mongoose.Types.ObjectId(conversationId);
   userId = new mongoose.Types.ObjectId(userId);
 
-  const response = await Conversation.aggregate([
+  const result = await Conversation.aggregate([
     { $match: { _id: conversationId } },
     { $unwind: "$participants" },
     {
       $match: {
-        "participants.participantId": userId,
+        "participants.participantId": new mongoose.Types.ObjectId(userId),
       },
     },
-    { $project: { _id: false, lastSeenTime: "$participants.lastSeenTime" } },
+    {
+      $lookup: {
+        from: "messages",
+        let: {
+          conversationId: "$_id",
+          lastSeenTime: "$participants.lastSeenTime",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$conversationId", "$$conversationId"] },
+                  { $lte: ["$createdAt", "$$lastSeenTime"] },
+                  { $eq: ["$receiverId", userId] },
+                ],
+              },
+            },
+          },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+        ],
+        as: "lastMessage",
+      },
+    },
+    {
+      $project: {
+        _id: { $arrayElemAt: ["$lastMessage._id", 0] },
+      },
+    },
   ]);
 
-  if (response.length > 0) {
-    const lastSeenTime = response[0].lastSeenTime;
-    const messageId = await Message.findOne({
-      conversationId,
-      createdAt: { $lte: lastSeenTime },
-      receiverId: userId,
-    })
-      .sort({ createdAt: -1 })
-      .select({ _id: true });
-
-    return res.status(200).send(messageId);
+  if (result.length > 0) {
+    return res.status(200).send(result[0]);
   }
   throw new NotFoundError("Last seen time not found");
 });

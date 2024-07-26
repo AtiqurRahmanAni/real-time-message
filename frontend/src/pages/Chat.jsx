@@ -400,10 +400,13 @@ const Chat = () => {
     }
 
     /* 
-    update last seen of a user in the group if 
-    he is currently in the incoming message group
+    update last seen of a user except the sender in 
+    the group if he is currently in the incoming message group
     */
-    if (currentSelectedGroup?._id === group._id) {
+    if (
+      currentSelectedGroup?._id === group._id &&
+      message.senderId !== user._id
+    ) {
       updateUserGroupLastSeenMutation.mutate(group._id);
     }
   };

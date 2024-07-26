@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { BadRequestError, InternalServerError } from "../utils/errors.js";
 import GroupMessage from "../models/groupMessage.js";
 import { GroupChatEventEnum } from "../constants/index.js";
+import GroupMessageDto from "../dto/groupMessageDto.js";
 
 export const getGroupsByParticipantId = asyncHandler(async (req, res) => {
   let { participantId } = req.params;
@@ -96,6 +97,7 @@ export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(20)
       .select({
+        groupId: false,
         __v: false,
       });
     return res.status(200).send(messages.reverse());
@@ -191,14 +193,7 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
           group: {
             _id: group._id,
           },
-          message: {
-            _id: newMessage._id,
-            content: newMessage.content,
-            senderId: newMessage.senderId,
-            receiverIds: newMessage.receiverIds,
-            attachments: newMessage.attachments,
-            createdAt: newMessage.createdAt,
-          },
+          message: new GroupMessageDto(newMessage),
         });
     });
 
@@ -215,6 +210,7 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
 export const updateLastSeenByGroupId = asyncHandler(async (req, res) => {
   const { participantId } = req.body;
   const { groupId } = req.params;
+
   try {
     const result = await Conversation.updateOne(
       {
