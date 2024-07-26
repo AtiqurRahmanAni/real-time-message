@@ -5,7 +5,6 @@ import groupStore from "../stores/groupStore";
 import conversationStore from "../stores/conversationStore";
 import socketStore from "../stores/socketStore";
 import { GroupChatEventEnum } from "../constants";
-import { useMutation } from "@tanstack/react-query";
 
 const GroupTabItem = ({ item }) => {
   // for selecting a group

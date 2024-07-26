@@ -26,7 +26,13 @@ const ChatTabItem = ({ item }) => {
       setSelectedConversation(item);
       // when the user select a one to one conversation, unselect the group
       setSelectedGroup(null);
-      if (socket && item.conversation) {
+
+      // emit event to update unseenCount if the last message receiver me
+      if (
+        socket &&
+        item.conversation &&
+        item?.lastMessage.receiverId === user._id
+      ) {
         socket.emit(ChatEventEnum.MESSAGE_SEEN_EVENT, {
           selectedConversationId: item.conversation._id,
           room: user._id,

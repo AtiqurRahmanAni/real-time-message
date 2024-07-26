@@ -6,6 +6,7 @@ import { io } from "socket.io-client";
 import socketStore from "../stores/socketStore";
 import { useQueryClient } from "@tanstack/react-query";
 import conversationStore from "../stores/conversationStore";
+import groupStore from "../stores/groupStore";
 
 const AuthContext = createContext();
 
@@ -20,6 +21,7 @@ export const AuthContextProvider = ({ children }) => {
   const resetConversations = conversationStore(
     (state) => state.resetConversations
   );
+  const resetGroups = groupStore((state) => state.resetGroups);
 
   const initSocket = (userId) => {
     const socket_url = import.meta.env.VITE_SOCKET_URL;
@@ -61,6 +63,7 @@ export const AuthContextProvider = ({ children }) => {
     }
     setUser(null);
     resetConversations();
+    resetGroups();
     queryClient.removeQueries();
   };
 

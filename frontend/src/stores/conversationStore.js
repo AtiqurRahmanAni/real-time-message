@@ -35,8 +35,6 @@ const conversationStore = create((set) => ({
       };
     }),
   setOnlineUsers: (state) => set({ onlineUsers: state }),
-  setNewMessages: (newMessage) =>
-    set((state) => ({ newMessages: [...state.newMessages, newMessage] })),
   resetConversations: () => set(initialStates),
 }));
 

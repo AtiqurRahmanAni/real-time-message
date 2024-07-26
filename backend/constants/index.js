@@ -38,6 +38,10 @@ export const GroupChatEventEnum = Object.freeze({
   GROUP_MESSAGE_SEEN_EVENT: "groupMessageSeen",
   // ? groups update event, if a group is deleted to crated
   GROUP_UPDATE_EVENT: "groupUpdateEvent",
+  // ? when participant starts typing
+  GROUP_TYPING_EVENT: "groupTyping",
+  // ? when participant stops typing
+  STOP_GROUP_TYPING_EVENT: "stopGroupTyping",
 });
 
 export const ChatRoomEnum = Object.freeze({
