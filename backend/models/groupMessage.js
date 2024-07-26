@@ -5,7 +5,7 @@ const attachmentSchema = new Schema(
   { _id: false }
 );
 
-const messageSchema = new Schema({
+const groupMessageSchema = new Schema({
   groupId: {
     type: Schema.Types.ObjectId,
     required: true,
@@ -30,6 +30,6 @@ const messageSchema = new Schema({
   },
 });
 
-const GroupMessage = model("GroupMessage", messageSchema);
+const GroupMessage = model("GroupMessage", groupMessageSchema);
 GroupMessage.createIndexes({ conversationId: 1 });
 export default GroupMessage;

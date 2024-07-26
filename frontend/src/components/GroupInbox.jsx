@@ -29,6 +29,18 @@ const GroupInbox = () => {
     }
   );
 
+  const {
+    data: messageViewers,
+    isLoading: isMessageViewersLoading,
+    error: messageViewersError,
+  } = useFetchData(
+    ["lastSeenGroupMessages", selectedGroup?._id],
+    `group-conversation/group/${selectedGroup._id}/last-seen-message-by/${user._id}`,
+    {
+      enabled: !!(groupMessages && selectedGroup?._id),
+    }
+  );
+
   const messageSendMutation = useMutation({
     mutationFn: (formData) =>
       axiosInstance.post(
@@ -88,7 +100,11 @@ const GroupInbox = () => {
                   ? getSenderName(message.senderId)
                   : null
               }
-              //   lastSeenMessageId={lastSeenMessage?.data?._id}
+              lastMessageViewersIds={
+                messageViewers?.data?.find(
+                  (entry) => entry.lastMessageId === message._id
+                )?.viewerIds
+              }
             />
           ))}
           <div ref={messagesEndRef} />

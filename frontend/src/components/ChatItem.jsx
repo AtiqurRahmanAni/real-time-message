@@ -1,13 +1,30 @@
 import React from "react";
 import { useAuthContext } from "../context/AuthContextProvider";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ChatItem = ({
   message,
   onImageClick,
   senderName = null,
-  lastSeenMessageId = null,
+  lastMessageViewersIds = null,
 }) => {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+
+  let seenBy = "";
+  if (lastMessageViewersIds) {
+    const cachedUsers = queryClient.getQueryData(["getConversations"])?.data;
+    lastMessageViewersIds.forEach((id, idx) => {
+      const username = cachedUsers.find(
+        (cachedUser) => cachedUser._id === id
+      ).username;
+
+      seenBy += username;
+      if (idx < lastMessageViewersIds.length - 1) {
+        seenBy += ", ";
+      }
+    });
+  }
 
   return (
     <li
@@ -45,9 +62,7 @@ const ChatItem = ({
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
-        {lastSeenMessageId === message._id && message.senderId === user._id && (
-          <div className="text-xs">Seen</div>
-        )}
+        {lastMessageViewersIds && <div className="text-xs">{seenBy}</div>}
       </div>
     </li>
   );
