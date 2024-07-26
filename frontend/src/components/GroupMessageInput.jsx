@@ -1,59 +1,61 @@
 import { useState, useEffect, useRef } from "react";
 import MessageSendButton from "./MessageSendButton";
-import socketStore from "../stores/socketStore";
-import { ChatEventEnum } from "../constants/index.js";
-import conversationStore from "../stores/conversationStore.js";
+// import socketStore from "../stores/socketStore";
+// import { ChatEventEnum, GroupChatEventEnum } from "../constants/index.js";
+// import conversationStore from "../stores/conversationStore.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import AttachmentButton from "./AttachmentButton.jsx";
 import CloseButton from "./CloseButton.jsx";
 import toast from "react-hot-toast";
-import groupStore from "../stores/groupStore.js";
+// import groupStore from "../stores/groupStore.js";
 
 const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
   const [messageContent, setMessageContent] = useState("");
   const { user } = useAuthContext();
-  const socket = socketStore((state) => state.socket);
-  const selectedGroup = groupStore((state) => state.selectedGroup);
-  const selectedGroupRef = useRef(selectedGroup);
+  // const socket = socketStore((state) => state.socket);
+  // const selectedGroup = groupStore((state) => state.selectedGroup);
   const attachmentInputRef = useRef(null);
   const [attachments, setAttachments] = useState([]);
   const isTyping = useRef(false);
 
-  //   useEffect(() => {
-  //     if (!socket) return;
+  // useEffect(() => {
+  //   if (!socket) return;
 
-  //     socket.on(ChatEventEnum.TYPING_EVENT, onTyping);
-  //     socket.on(ChatEventEnum.STOP_TYPING_EVENT, onStopTyping);
-  //     return () => {
-  //       socket.off(ChatEventEnum.TYPING_EVENT, onTyping);
-  //       socket.off(ChatEventEnum.STOP_TYPING_EVENT, onStopTyping);
-  //     };
-  //   }, [socket]);
+  //   socket.on(GroupChatEventEnum.GROUP_TYPING_EVENT, onTyping);
+  //   socket.on(GroupChatEventEnum.STOP_GROUP_TYPING_EVENT, onStopTyping);
+
+  //   return () => {
+  //     socket.off(GroupChatEventEnum.GROUP_TYPING_EVENT, onTyping);
+  //     socket.off(GroupChatEventEnum.STOP_GROUP_TYPING_EVENT, onStopTyping);
+  //   };
+  // }, [socket]);
 
   //   useEffect(() => {
   //     selectedConversationRef.current = selectedConversation;
   //   }, [selectedConversation]);
 
-  //   const onTyping = (typingUserId) => {
-  //     if (selectedConversationRef.current._id === typingUserId) {
-  //       setIsOtherUserTyping(true);
-  //     } else {
-  //       setIsOtherUserTyping(false);
-  //     }
-  //   };
+  // const onTyping = (typingUserId) => {
+  //   console.log(`${typingUserId} is typing`);
+  //   // if (selectedConversationRef.current._id === typingUserId) {
+  //   //   setIsOtherUserTyping(true);
+  //   // } else {
+  //   //   setIsOtherUserTyping(false);
+  //   // }
+  // };
 
-  //   const onStopTyping = (typingUserId) => {
-  //     if (selectedConversationRef.current._id === typingUserId) {
-  //       setIsOtherUserTyping(false);
-  //     }
-  //   };
+  // const onStopTyping = (typingUserId) => {
+  //   console.log(`${typingUserId} has stopped typing`);
+  //   // if (selectedConversationRef.current._id === typingUserId) {
+  //   //   setIsOtherUserTyping(false);
+  //   // }
+  // };
 
   const handleTextInputChange = (e) => {
     setMessageContent(e.target.value);
 
     // if (!isTyping.current && socket) {
-    //   socket.emit(ChatEventEnum.TYPING_EVENT, {
-    //     targetUserId: selectedConversation._id,
+    //   socket.emit(GroupChatEventEnum.GROUP_TYPING_EVENT, {
+    //     targetGroupId: selectedGroup._id,
     //     typingUserId: user._id,
     //   });
     //   isTyping.current = true;
@@ -62,8 +64,8 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
 
   const handleOnBlur = () => {
     isTyping.current = false;
-    // socket.emit(ChatEventEnum.STOP_TYPING_EVENT, {
-    //   targetUserId: selectedConversation._id,
+    // socket.emit(GroupChatEventEnum.STOP_GROUP_TYPING_EVENT, {
+    //   targetGroupId: selectedGroup._id,
     //   typingUserId: user._id,
     // });
   };

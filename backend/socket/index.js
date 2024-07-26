@@ -56,6 +56,16 @@ export const initSocket = (io) => {
     });
 
     socket.on(
+      GroupChatEventEnum.GROUP_TYPING_EVENT,
+      ({ targetGroupId, typingUserId, targetUserIds }) => {
+        /* 
+      broadcasting the typing event to the target group
+      */
+        console.log(targetGroupId, typingUserId);
+      }
+    );
+
+    socket.on(
       ChatEventEnum.STOP_TYPING_EVENT,
       ({ targetUserId, typingUserId }) => {
         /* broadcasting the stop typing event to the target user
