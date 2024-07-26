@@ -45,6 +45,9 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
                   {
                     $in: [userId, "$participants.participantId"],
                   },
+                  {
+                    $eq: ["$isGroupConversation", false],
+                  },
                 ],
               },
             },
@@ -93,7 +96,7 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
               $expr: {
                 $and: [
                   { $eq: ["$conversationId", "$$conversationId"] },
-                  { $gte: ["$createdAt", "$$lastSeenTime"] },
+                  { $gt: ["$createdAt", "$$lastSeenTime"] },
                 ],
               },
             },
@@ -103,7 +106,7 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
       },
     },
     {
-      $sort: { lastMessage: -1 },
+      $sort: { "lastMessage.createdAt": -1 },
     },
     {
       $project: {
@@ -130,25 +133,66 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
 
 export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
-  const { pageNo = 1, pageSize = 10 } = req.query;
-
-  const page = parseInt(pageNo);
-  const size = parseInt(pageSize);
-
-  const totalCount = await Message.countDocuments({ conversationId });
-  const totalPages = Math.ceil(totalCount / pageSize);
 
   const messages = await Message.find({ conversationId })
     .sort({ createdAt: -1 })
-    .skip((page - 1) * size)
-    .limit(size)
+    .limit(20)
     .select({
       __v: false,
     });
 
-  return res
-    .status(200)
-    .json({ messages, nextPage: page + 1 <= totalPages ? page + 1 : null });
+  return res.status(200).send(messages.reverse());
+});
+
+export const getLastSeenMessageId = asyncHandler(async (req, res) => {
+  let { conversationId, userId } = req.params;
+  conversationId = new mongoose.Types.ObjectId(conversationId);
+  userId = new mongoose.Types.ObjectId(userId);
+
+  const result = await Conversation.aggregate([
+    { $match: { _id: conversationId } },
+    { $unwind: "$participants" },
+    {
+      $match: {
+        "participants.participantId": new mongoose.Types.ObjectId(userId),
+      },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        let: {
+          conversationId: "$_id",
+          lastSeenTime: "$participants.lastSeenTime",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$conversationId", "$$conversationId"] },
+                  { $lte: ["$createdAt", "$$lastSeenTime"] },
+                  { $eq: ["$receiverId", userId] },
+                ],
+              },
+            },
+          },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+        ],
+        as: "lastMessage",
+      },
+    },
+    {
+      $project: {
+        _id: { $arrayElemAt: ["$lastMessage._id", 0] },
+      },
+    },
+  ]);
+
+  if (result.length > 0) {
+    return res.status(200).send(result[0]);
+  }
+  throw new NotFoundError("Last seen time not found");
 });
 
 export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
@@ -167,7 +211,7 @@ export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
       }
     );
 
-    return res.status(200).json({ message: "Set seen successful" });
+    return res.status(200).json({ message: "Last seen updated" });
   } catch (err) {
     console.error(`Error updating seen status: ${err}`);
     throw new InternalServerError("Something went wrong updating seen status");
@@ -287,34 +331,4 @@ export const sendMessage = asyncHandler(async (req, res) => {
       deleteFiles(attachments.map((item) => item.path));
     }
   }
-});
-
-export const getLastSeenMessageId = asyncHandler(async (req, res) => {
-  let { conversationId, userId } = req.params;
-  conversationId = new mongoose.Types.ObjectId(conversationId);
-  userId = new mongoose.Types.ObjectId(userId);
-
-  const response = await Conversation.aggregate([
-    { $match: { _id: conversationId } },
-    { $unwind: "$participants" },
-    {
-      $match: {
-        "participants.participantId": userId,
-      },
-    },
-    { $project: { _id: false, lastSeenTime: "$participants.lastSeenTime" } },
-  ]);
-
-  if (response.length > 0) {
-    const lastSeenTime = response[0].lastSeenTime;
-    const messageId = await Message.findOne({
-      conversationId,
-      createdAt: { $lte: lastSeenTime },
-    })
-      .sort({ createdAt: -1 })
-      .select({ _id: true });
-
-    return res.status(200).send(messageId);
-  }
-  throw new NotFoundError("Last seen time not found");
 });

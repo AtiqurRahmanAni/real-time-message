@@ -1,50 +1,53 @@
-import { ChatEventEnum } from "../constants";
+import React from "react";
+import { formatTimeStamp } from "../utils";
 import { useAuthContext } from "../context/AuthContextProvider";
+import groupStore from "../stores/groupStore";
 import conversationStore from "../stores/conversationStore";
 import socketStore from "../stores/socketStore";
-import { formatTimeStamp } from "../utils/index";
+import { GroupChatEventEnum } from "../constants";
+import { useMutation } from "@tanstack/react-query";
 
-const SidebarItem = ({ item }) => {
-  // for selecting a conversation in the sidebar
-  const selectedConversation = conversationStore(
-    (state) => state.selectedConversation
-  );
+const GroupTabItem = ({ item }) => {
+  // for selecting a group
+  const selectedGroup = groupStore((state) => state.selectedGroup);
+  const setSelectedGroup = groupStore((state) => state.setSelectedGroup);
   const setSelectedConversation = conversationStore(
     (state) => state.setSelectedConversation
   );
   const socket = socketStore((state) => state.socket);
 
-  // online users state
-  const onlineUsers = conversationStore((state) => state.onlineUsers);
   const { user } = useAuthContext();
 
-  const onConversationSelect = (item) => {
-    if (selectedConversation?._id !== item._id) {
-      setSelectedConversation(item);
-      if (socket && item.conversation) {
-        socket.emit(ChatEventEnum.MESSAGE_SEEN_EVENT, {
-          selectedConversationId: item.conversation._id,
-          room: user._id,
-        });
-      }
+  const onGroupSelect = (newSelectedGroup) => {
+    setSelectedGroup(newSelectedGroup);
+    // when the user select a group unselect the one to one conversation
+    setSelectedConversation(null);
+
+    if (
+      socket &&
+      newSelectedGroup?.lastMessage &&
+      newSelectedGroup?.lastMessage?.senderId !== user._id &&
+      newSelectedGroup._id !== selectedGroup?._id
+    ) {
+      // emit an event to the current user room to set unseen count
+      socket.emit(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, {
+        selectedGroupId: newSelectedGroup._id,
+        room: user._id,
+      });
     }
   };
 
   return (
     <li
-      key={item._id}
       className={`relative px-4 py-2 border border-b-gray-300 hover:bg-gray-200 cursor-pointer ${
-        item._id === selectedConversation?._id ? "bg-gray-300" : ""
+        item._id === selectedGroup?._id ? "bg-gray-300" : ""
       }`}
-      onClick={() => onConversationSelect(item)}
+      onClick={() => onGroupSelect(item)}
     >
       <div>
         <p className="text-gray-500 font-semibold text-lg">
-          {item.displayName}
+          {item.conversationName}
         </p>
-        {onlineUsers.includes(item._id) && (
-          <div className="absolute right-2 top-2 w-[8px] h-[8px] bg-green-600 rounded-full" />
-        )}
       </div>
       {item?.lastMessage && (
         <>
@@ -69,4 +72,4 @@ const SidebarItem = ({ item }) => {
   );
 };
 
-export default SidebarItem;
+export default GroupTabItem;
