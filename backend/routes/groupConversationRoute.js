@@ -3,6 +3,7 @@ import {
   createGroupByUserIds,
   getGroupMessagesByGroupId,
   getGroupsByParticipantId,
+  getSeenMessagesByReceivers,
   sendGroupMessage,
   updateLastSeenByGroupId,
 } from "../controllers/groupConversationController.js";
@@ -18,6 +19,11 @@ router.get(
   getGroupsByParticipantId
 );
 router.get("/group/:groupId/message", checkToken, getGroupMessagesByGroupId);
+router.get(
+  "/group/:groupId/last-seen-message-by/:senderId",
+  checkToken,
+  getSeenMessagesByReceivers
+);
 router.post("/group", checkToken, createGroupByUserIds);
 router.post(
   "/group/:groupId/message",

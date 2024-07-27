@@ -29,6 +29,18 @@ const GroupInbox = () => {
     }
   );
 
+  const {
+    data: messageViewers,
+    isLoading: isMessageViewersLoading,
+    error: messageViewersError,
+  } = useFetchData(
+    ["lastSeenGroupMessages", selectedGroup?._id],
+    `group-conversation/group/${selectedGroup._id}/last-seen-message-by/${user._id}`,
+    {
+      enabled: !!selectedGroup?._id,
+    }
+  );
+
   const messageSendMutation = useMutation({
     mutationFn: (formData) =>
       axiosInstance.post(
@@ -66,8 +78,8 @@ const GroupInbox = () => {
     // setIsOpen(true);
   };
 
-  const getSenderName = (senderId) => {
-    return cachedUsers?.find((user) => user._id === senderId)?.displayName;
+  const getSenderUsername = (senderId) => {
+    return cachedUsers?.find((user) => user._id === senderId)?.username;
   };
 
   return (
@@ -83,12 +95,16 @@ const GroupInbox = () => {
               key={message._id}
               message={message}
               onImageClick={onImageClick}
-              senderName={
+              senderUsername={
                 message.senderId !== user._id
-                  ? getSenderName(message.senderId)
+                  ? getSenderUsername(message.senderId)
                   : null
               }
-              //   lastSeenMessageId={lastSeenMessage?.data?._id}
+              lastMessageViewersIds={
+                messageViewers?.data?.find(
+                  (entry) => entry.lastMessageId === message._id
+                )?.viewerIds
+              }
             />
           ))}
           <div ref={messagesEndRef} />

@@ -41,3 +41,23 @@ export const formatTimeStamp = (timestamp) => {
     return "Just Now";
   }
 };
+
+// export const formatGroupMessageViewers = (dataToBeFormatted, userList) => {
+//   let processedData = [];
+//   for (entry of dataToBeFormatted) {
+//     const idx = processedData.findIndex(
+//       (pd) => pd?.lastMessageId === entry.lastMessageId
+//     );
+
+//     if (idx === -1) {
+//       processedData.push({
+//         lastMessageId: entry.lastMessageId,
+//         receiverIds: [entry.receiverId],
+//       });
+//     } else {
+//       processedData[idx].receiverIds.push(entry.receiverId);
+//     }
+//   }
+
+//   return processedData;
+// };

@@ -1,10 +1,15 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import Conversation from "../models/conversation.js";
 import mongoose from "mongoose";
-import { BadRequestError, InternalServerError } from "../utils/errors.js";
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+} from "../utils/errors.js";
 import GroupMessage from "../models/groupMessage.js";
 import { GroupChatEventEnum } from "../constants/index.js";
 import GroupMessageDto from "../dto/groupMessageDto.js";
+import { response } from "express";
 
 export const getGroupsByParticipantId = asyncHandler(async (req, res) => {
   let { participantId } = req.params;
@@ -105,6 +110,71 @@ export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
     console.error(`Error fetching group messages: ${err}`);
     throw new InternalServerError("Error fetching group messages");
   }
+});
+
+export const getSeenMessagesByReceivers = asyncHandler(async (req, res) => {
+  let { groupId, senderId } = req.params;
+
+  groupId = new mongoose.Types.ObjectId(groupId);
+  senderId = new mongoose.Types.ObjectId(senderId);
+  // get the receivers
+  const receivers = (
+    await Conversation.aggregate([
+      { $match: { _id: groupId } },
+      {
+        $project: {
+          participants: {
+            $filter: {
+              input: "$participants",
+              as: "participant",
+              cond: { $ne: ["$$participant.participantId", senderId] },
+            },
+          },
+        },
+      },
+    ])
+  )[0];
+
+  if (!receivers) {
+    throw new NotFoundError("not found");
+  }
+
+  // find the lastSeen messageId of each receivers
+  const result = [];
+  for (const participant of receivers.participants) {
+    const lastMessage = await GroupMessage.findOne({
+      groupId: groupId,
+      senderId: senderId,
+      receiverIds: participant.participantId,
+      createdAt: { $lte: participant.lastSeenTime },
+    })
+      .sort({ createdAt: -1 })
+      .select({ _id: true });
+
+    if (lastMessage) {
+      result.push({
+        receiverId: participant.participantId,
+        lastMessageId: lastMessage._id,
+      });
+    }
+  }
+
+  let processedData = [];
+  for (const entry of result) {
+    const idx = processedData.findIndex(
+      (pd) => pd?.lastMessageId === entry.lastMessageId.toString()
+    );
+    if (idx === -1) {
+      processedData.push({
+        lastMessageId: entry.lastMessageId.toString(),
+        viewerIds: [entry.receiverId],
+      });
+    } else {
+      processedData[idx].viewerIds.push(entry.receiverId);
+    }
+  }
+
+  return res.status(200).send(processedData);
 });
 
 export const createGroupByUserIds = asyncHandler(async (req, res) => {
