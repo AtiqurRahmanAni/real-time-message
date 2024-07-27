@@ -65,11 +65,13 @@ const Inbox = () => {
     },
   });
 
-  const { data: lastSeenMessage } = useFetchData(
-    ["lastSeenMessage", selectedConversation._id],
-    `conversation/${selectedConversation?.conversation?._id}/user/${selectedConversation._id}/last-message`,
+  const { data: lastSeenTime } = useFetchData(
+    ["lastSeenTime", selectedConversation._id],
+    `conversation/${selectedConversation?.conversation?._id}/user/${selectedConversation._id}/last-seen`,
     {
-      enabled: !!(messages && selectedConversation?.conversation),
+      enabled: !!(
+        messages?.data?.length > 0 && selectedConversation?.conversation
+      ),
     }
   );
 
@@ -78,7 +80,7 @@ const Inbox = () => {
       behavior: "auto",
       block: "end",
     });
-  }, [messages]);
+  }, [messages, lastSeenTime]);
 
   const onImageClick = (imageUrl) => {
     selectedImageUrl.current = imageUrl;
@@ -94,12 +96,13 @@ const Inbox = () => {
           </div>
         ) : (
           <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-            {messages?.data?.map((message) => (
+            {messages?.data?.map((message, idx) => (
               <ChatItem
                 key={message._id}
                 message={message}
                 onImageClick={onImageClick}
-                lastSeenMessageId={lastSeenMessage?.data?._id}
+                lastSeenTimeOfReceiver={lastSeenTime?.data?.lastSeenTime}
+                isLastMessage={idx === messages.data.length - 1}
               />
             ))}
             <div ref={messagesEndRef} />

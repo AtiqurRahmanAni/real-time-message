@@ -67,9 +67,9 @@ export const initSocket = (io) => {
     // for updating one to one chat last seen
     socket.on(
       ChatEventEnum.LAST_SEEN_MESSAGE,
-      ({ lastMessageId, room, receiverId }) => {
+      ({ lastSeenTime, room, receiverId }) => {
         io.to(room).emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
-          lastMessageId,
+          lastSeenTime,
           receiverId,
         });
       }

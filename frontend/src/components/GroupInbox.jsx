@@ -37,7 +37,7 @@ const GroupInbox = () => {
     ["lastSeenGroupMessages", selectedGroup?._id],
     `group-conversation/group/${selectedGroup._id}/last-seen-message-by/${user._id}`,
     {
-      enabled: !!selectedGroup?._id,
+      enabled: !!(groupMessages?.data?.length > 0 && selectedGroup?._id),
     }
   );
 
@@ -90,7 +90,7 @@ const GroupInbox = () => {
         </div>
       ) : (
         <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-          {groupMessages?.data?.map((message) => (
+          {/* {groupMessages?.data?.map((message) => (
             <ChatItem
               key={message._id}
               message={message}
@@ -106,7 +106,7 @@ const GroupInbox = () => {
                 )?.viewerIds
               }
             />
-          ))}
+          ))} */}
           <div ref={messagesEndRef} />
         </ul>
       )}
