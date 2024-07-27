@@ -37,7 +37,7 @@ const GroupInbox = () => {
     ["lastSeenGroupMessages", selectedGroup?._id],
     `group-conversation/group/${selectedGroup._id}/last-seen-message-by/${user._id}`,
     {
-      enabled: !!selectedGroup?._id,
+      enabled: !!(groupMessages?.data?.length > 0 && selectedGroup?._id),
     }
   );
 

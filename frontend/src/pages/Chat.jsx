@@ -17,7 +17,7 @@ const Chat = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const [selectedTab, setSelectedTab] = useState(0); // 0 for chat, 1 for group chat
+  const [selectedTab, setSelectedTab] = useState(1); // 0 for chat, 1 for group chat
   const queryClient = useQueryClient();
 
   const { user } = useAuthContext();
@@ -454,37 +454,59 @@ const Chat = () => {
 
   // for updating the seen message in a group
   const handleGroupMessageLastSeen = ({ groupId, receiverId, messageId }) => {
-    // // console.log(groupId, receiverId, messageId);
-    // queryClient.setQueryData(["lastSeenGroupMessages", groupId], (oldData) => {
-    //   // console.log(oldData);
-    //   if (!oldData) return;
-    //   // first check if the messageId is exist in oldData
-    //   const lastSeenMessage = oldData.data;
-    //   const prevLastSeenMessageIdx = lastSeenMessage.findIndex(
-    //     (item) => item.lastMessageId === messageId
-    //   );
+    // queryClient.invalidateQueries(["lastSeenGroupMessages", groupId]);
+    // fetch result format
+    // [
+    //   {
+    //     lastMessageId: "66a3d1fd69dbb7de78fd4040",
+    //     viewerIds: ["66a0954399ea88e113c066c9", "66a0953999ea88e113c066c6"],
+    //   },
+    // ];
+    // console.log(messageId, receiverId);
+    queryClient.setQueryData(["lastSeenGroupMessages", groupId], (oldData) => {
+      if (!oldData) return;
+      const lastSeenMessageLists = [...oldData.data];
 
-    //   /*
-    //   if the receiverId does exist append the
-    //   receiverId to the viewerIds list
-    //   */
-    //   if (prevLastSeenMessageIdx !== -1) {
-    //     const viewerIds = lastSeenMessage[prevLastSeenMessageIdx].viewerIds;
-    //     if (!viewerIds.includes(receiverId)) {
-    //       viewerIds.push(receiverId);
-    //     }
-    //   }
+      // first un group the response
+      let unGroupList = [];
+      lastSeenMessageLists.forEach((item) => {
+        const viewerIds = item.viewerIds;
+        viewerIds.forEach((id) => {
+          if (id !== receiverId) {
+            unGroupList.push({
+              lastMessageId: item.lastMessageId,
+              viewerId: id,
+            });
+          }
+        });
+      });
 
-    //   console.log(lastSeenMessage);
+      // push the newly seen message to the unGroupList
+      unGroupList.push({ lastMessageId: messageId, viewerId: receiverId });
+      console.log(unGroupList);
 
-    //   return {
-    //     ...oldData,
-    //     data: lastSeenMessage,
-    //   };
-    // });
+      // now group the data on viewerIds
+      let groupedData = [];
+      for (const entry of unGroupList) {
+        const idx = groupedData.findIndex(
+          (gd) => gd?.lastMessageId === entry.lastMessageId
+        );
+        if (idx === -1) {
+          groupedData.push({
+            lastMessageId: entry.lastMessageId,
+            viewerIds: [entry.viewerId],
+          });
+        } else {
+          groupedData[idx].viewerIds.push(entry.viewerId);
+        }
+      }
 
-    // I will optimize this later
-    queryClient.invalidateQueries(["lastSeenGroupMessages", groupId]);
+      console.log(groupedData);
+      return {
+        ...oldData,
+        data: groupedData,
+      };
+    });
   };
 
   return (
