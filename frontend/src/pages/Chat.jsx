@@ -79,6 +79,10 @@ const Chat = () => {
     );
     socket.on(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, onGroupMessageSeen);
     socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
+    socket.on(
+      GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE,
+      handleGroupMessageLastSeen
+    );
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
@@ -98,6 +102,10 @@ const Chat = () => {
         onGroupMessageSeen
       );
       socket.off(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
+      socket.off(
+        GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE,
+        handleGroupMessageLastSeen
+      );
     };
   }, [socket]);
 
@@ -408,6 +416,14 @@ const Chat = () => {
       message.senderId !== user._id
     ) {
       updateUserGroupLastSeenMutation.mutate(group._id);
+
+      // emit an event to the sender side to update lastSeen message
+      socket.emit(GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE, {
+        groupId: group._id,
+        senderId: message.senderId,
+        receiverId: user._id,
+        messageId: message._id,
+      });
     }
   };
 
@@ -434,6 +450,41 @@ const Chat = () => {
   // if new group is created or deleted, fetch the groups again
   const onGroupUpdate = () => {
     queryClient.invalidateQueries({ queryKey: ["getGroups"] });
+  };
+
+  // for updating the seen message in a group
+  const handleGroupMessageLastSeen = ({ groupId, receiverId, messageId }) => {
+    // // console.log(groupId, receiverId, messageId);
+    // queryClient.setQueryData(["lastSeenGroupMessages", groupId], (oldData) => {
+    //   // console.log(oldData);
+    //   if (!oldData) return;
+    //   // first check if the messageId is exist in oldData
+    //   const lastSeenMessage = oldData.data;
+    //   const prevLastSeenMessageIdx = lastSeenMessage.findIndex(
+    //     (item) => item.lastMessageId === messageId
+    //   );
+
+    //   /*
+    //   if the receiverId does exist append the
+    //   receiverId to the viewerIds list
+    //   */
+    //   if (prevLastSeenMessageIdx !== -1) {
+    //     const viewerIds = lastSeenMessage[prevLastSeenMessageIdx].viewerIds;
+    //     if (!viewerIds.includes(receiverId)) {
+    //       viewerIds.push(receiverId);
+    //     }
+    //   }
+
+    //   console.log(lastSeenMessage);
+
+    //   return {
+    //     ...oldData,
+    //     data: lastSeenMessage,
+    //   };
+    // });
+
+    // I will optimize this later
+    queryClient.invalidateQueries(["lastSeenGroupMessages", groupId]);
   };
 
   return (

@@ -33,6 +33,14 @@ const GroupTabItem = ({ item }) => {
         selectedGroupId: newSelectedGroup._id,
         room: user._id,
       });
+
+      // emit an event to the sender side to update lastSeen message
+      socket.emit(GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE, {
+        groupId: newSelectedGroup._id,
+        senderId: newSelectedGroup.lastMessage.senderId,
+        receiverId: user._id,
+        messageId: newSelectedGroup.lastMessage._id,
+      });
     }
   };
 

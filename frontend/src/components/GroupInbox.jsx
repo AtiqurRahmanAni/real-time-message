@@ -37,7 +37,7 @@ const GroupInbox = () => {
     ["lastSeenGroupMessages", selectedGroup?._id],
     `group-conversation/group/${selectedGroup._id}/last-seen-message-by/${user._id}`,
     {
-      enabled: !!(groupMessages && selectedGroup?._id),
+      enabled: !!selectedGroup?._id,
     }
   );
 
@@ -78,8 +78,8 @@ const GroupInbox = () => {
     // setIsOpen(true);
   };
 
-  const getSenderName = (senderId) => {
-    return cachedUsers?.find((user) => user._id === senderId)?.displayName;
+  const getSenderUsername = (senderId) => {
+    return cachedUsers?.find((user) => user._id === senderId)?.username;
   };
 
   return (
@@ -95,9 +95,9 @@ const GroupInbox = () => {
               key={message._id}
               message={message}
               onImageClick={onImageClick}
-              senderName={
+              senderUsername={
                 message.senderId !== user._id
-                  ? getSenderName(message.senderId)
+                  ? getSenderUsername(message.senderId)
                   : null
               }
               lastMessageViewersIds={

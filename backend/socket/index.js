@@ -56,16 +56,6 @@ export const initSocket = (io) => {
     });
 
     socket.on(
-      GroupChatEventEnum.GROUP_TYPING_EVENT,
-      ({ targetGroupId, typingUserId, targetUserIds }) => {
-        /* 
-      broadcasting the typing event to the target group
-      */
-        console.log(targetGroupId, typingUserId);
-      }
-    );
-
-    socket.on(
       ChatEventEnum.STOP_TYPING_EVENT,
       ({ targetUserId, typingUserId }) => {
         /* broadcasting the stop typing event to the target user
@@ -74,12 +64,25 @@ export const initSocket = (io) => {
       }
     );
 
+    // for updating one to one chat last seen
     socket.on(
       ChatEventEnum.LAST_SEEN_MESSAGE,
       ({ lastMessageId, room, receiverId }) => {
         io.to(room).emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
           lastMessageId,
           receiverId,
+        });
+      }
+    );
+
+    // for updating group chat last seen
+    socket.on(
+      GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE,
+      ({ groupId, senderId, receiverId, messageId }) => {
+        io.to(senderId).emit(GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE, {
+          groupId,
+          receiverId,
+          messageId,
         });
       }
     );

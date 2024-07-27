@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const ChatItem = ({
   message,
   onImageClick,
-  senderName = null,
+  senderUsername = null,
   lastMessageViewersIds = null,
 }) => {
   const { user } = useAuthContext();
@@ -35,7 +35,7 @@ const ChatItem = ({
       }`}
     >
       <div className="max-w-full xl:max-w-[60%] ">
-        {senderName && <div className="text-xs ml-1">{senderName}</div>}
+        {senderUsername && <div className="text-xs ml-1">{senderUsername}</div>}
         <div
           className={`rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
