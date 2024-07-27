@@ -195,26 +195,53 @@ export const getLastSeenMessageId = asyncHandler(async (req, res) => {
   throw new NotFoundError("Last seen time not found");
 });
 
-export const updateLastSeenByParticipantId = asyncHandler(async (req, res) => {
-  const { conversationId, participantId } = req.body;
+export const getLastSeenByUserId = asyncHandler(async (req, res) => {
+  const { conversationId, userId } = req.params;
 
   try {
-    const result = await Conversation.updateOne(
+    const lastSeen = await Conversation.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(conversationId) } },
+      { $unwind: "$participants" },
+      {
+        $match: {
+          "participants.participantId": new mongoose.Types.ObjectId(userId),
+        },
+      },
+      { $project: { _id: 0, lastSeenTime: "$participants.lastSeenTime" } },
+    ]);
+
+    return res.status(200).send(lastSeen[0]);
+  } catch (err) {
+    console.error(`Error fetching last seen: ${err}`);
+    throw new InternalServerError("Error fetching last seen");
+  }
+});
+
+export const updateLastSeenByUserId = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+  const { conversationId } = req.params;
+
+  try {
+    const result = await Conversation.findOneAndUpdate(
       {
         _id: new mongoose.Types.ObjectId(conversationId),
-        "participants.participantId": new mongoose.Types.ObjectId(
-          participantId
-        ),
+        "participants.participantId": new mongoose.Types.ObjectId(userId),
+        isGroupConversation: false,
       },
       {
         $set: { "participants.$.lastSeenTime": new Date() },
-      }
+      },
+      { new: true }
     );
 
-    return res.status(200).json({ message: "Last seen updated" });
+    const lastSeenTime = result.participants.find(
+      (participant) => participant.participantId.toString() === userId
+    )?.lastSeenTime;
+
+    return res.status(200).json({ lastSeenTime });
   } catch (err) {
-    console.error(`Error updating seen status: ${err}`);
-    throw new InternalServerError("Something went wrong updating seen status");
+    console.error(`Something went wrong updating last seen: ${err}`);
+    throw new InternalServerError("Something went wrong updating last seen");
   }
 });
 

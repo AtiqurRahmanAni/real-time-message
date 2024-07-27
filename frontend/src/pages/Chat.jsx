@@ -17,7 +17,7 @@ const Chat = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const [selectedTab, setSelectedTab] = useState(1); // 0 for chat, 1 for group chat
+  const [selectedTab, setSelectedTab] = useState(0); // 0 for chat, 1 for group chat
   const queryClient = useQueryClient();
 
   const { user } = useAuthContext();
@@ -42,24 +42,6 @@ const Chat = () => {
       refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
     }
   );
-
-  // for updating the last seen status of a user
-  const updateUserLastSeenMutation = useMutation({
-    mutationFn: (conversationId, participantId = null) => {
-      return axiosInstance.patch("conversation/seen", {
-        conversationId,
-        participantId: participantId || user._id,
-      });
-    },
-    onSuccess: (response) => {
-      // toast.success(response.data.message);
-    },
-    onError: (error) => {
-      toast.error(
-        error.response ? error.response.data.message : "Something went wrong"
-      );
-    },
-  });
 
   // socket configuration
   useEffect(() => {
@@ -108,6 +90,34 @@ const Chat = () => {
       );
     };
   }, [socket]);
+
+  // // for updating the last seen status of a user
+  const updateUserLastSeenMutation = useMutation({
+    mutationFn: (conversationId) => {
+      return axiosInstance.patch(`conversation/${conversationId}/last-seen`, {
+        userId: user._id,
+      });
+    },
+    onSuccess: (response) => {
+      const lastSeenTime = response.data.lastSeenTime;
+      /*
+      fire an event to the sender side with the
+      updated lastSeen time of this user
+      */
+      if (socket) {
+        socket.emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
+          lastSeenTime: lastSeenTime,
+          room: selectedConversation._id,
+          receiverId: user._id,
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+    },
+  });
 
   // refer to the latest value of selected conversation and group
   useEffect(() => {
@@ -176,7 +186,7 @@ const Chat = () => {
     */
     if (
       currentSelectedConversation &&
-      !currentSelectedConversation.conversation &&
+      !currentSelectedConversation?.conversation &&
       (currentSelectedConversation._id === message.receiverId ||
         currentSelectedConversation._id === message.senderId)
     ) {
@@ -192,7 +202,7 @@ const Chat = () => {
     is received increment the unseen count for the unselected conversations
     */
     queryClient.setQueryData(["getConversations"], (oldData) => {
-      if (!oldData) return null;
+      if (!oldData) return;
 
       let items = [];
       let latestItem = null;
@@ -234,7 +244,11 @@ const Chat = () => {
     if there is an inbox open, only then update the cache,
     it will rerender the inbox and show new messages.
     */
-    if (currentSelectedConversation) {
+
+    if (
+      currentSelectedConversation?._id === message.senderId ||
+      currentSelectedConversation?._id === message.receiverId
+    ) {
       queryClient.setQueryData(
         ["getMessages", currentSelectedConversation._id],
         (oldData) => {
@@ -250,21 +264,15 @@ const Chat = () => {
 
     // update the lastSeen of the receiver if he is in someones inbox
     if (currentSelectedConversation?._id === message.senderId) {
-      updateUserLastSeenMutation.mutate(conversation._id, message.receiverId);
-
-      // emit event to the sender room to update the last seen message
-      if (socket) {
-        socket.emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
-          lastMessageId: message._id,
-          room: message.senderId,
-          receiverId: message.receiverId,
-        });
-      }
+      updateUserLastSeenMutation.mutate(conversation._id);
     }
   };
 
   const onMessageSeen = (selectedConversationId) => {
-    // set the seen status to true for the message with this conversationId
+    /*
+    update the user lastSeenTime with the 
+    current time if he select a conversation
+    */
     updateUserLastSeenMutation.mutate(selectedConversationId);
 
     // set the unseenCount to 0
@@ -284,37 +292,15 @@ const Chat = () => {
         }),
       };
     });
-
-    /*
-    fire an event to the sender side to update the last seen 
-    message if the last message sender is other person
-    */
-    const currentSelectedConversation = selectedConversationRef.current;
-    const cachedConversations = queryClient.getQueryData([
-      "getConversations",
-    ])?.data;
-    const lastMessage = cachedConversations?.find(
-      (item) => item._id === currentSelectedConversation._id
-    )?.lastMessage;
-
-    // emit event if the last message receiver is me
-    if (lastMessage?.receiverId === user._id) {
-      if (socket) {
-        socket.emit(ChatEventEnum.LAST_SEEN_MESSAGE, {
-          lastMessageId: lastMessage._id,
-          room: lastMessage.senderId,
-          receiverId: lastMessage.receiverId,
-        });
-      }
-    }
   };
 
-  const handleLastSeen = ({ lastMessageId, receiverId }) => {
-    queryClient.setQueryData(["lastSeenMessage", receiverId], (oldData) => {
+  const handleLastSeen = ({ lastSeenTime, receiverId }) => {
+    queryClient.setQueryData(["lastSeenTime", receiverId], (oldData) => {
       if (!oldData) return;
+
       return {
         ...oldData,
-        data: { _id: lastMessageId },
+        data: { lastSeenTime },
       };
     });
   };
@@ -462,7 +448,6 @@ const Chat = () => {
     //     viewerIds: ["66a0954399ea88e113c066c9", "66a0953999ea88e113c066c6"],
     //   },
     // ];
-    // console.log(messageId, receiverId);
     queryClient.setQueryData(["lastSeenGroupMessages", groupId], (oldData) => {
       if (!oldData) return;
       const lastSeenMessageLists = [...oldData.data];
@@ -483,7 +468,6 @@ const Chat = () => {
 
       // push the newly seen message to the unGroupList
       unGroupList.push({ lastMessageId: messageId, viewerId: receiverId });
-      console.log(unGroupList);
 
       // now group the data on viewerIds
       let groupedData = [];
@@ -501,7 +485,6 @@ const Chat = () => {
         }
       }
 
-      console.log(groupedData);
       return {
         ...oldData,
         data: groupedData,

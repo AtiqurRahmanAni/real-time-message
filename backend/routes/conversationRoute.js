@@ -4,8 +4,9 @@ import {
   getConversationsByUserId,
   sendMessage,
   getMessagesByConversationId,
-  updateLastSeenByParticipantId,
   getLastSeenMessageId,
+  getLastSeenByUserId,
+  updateLastSeenByUserId,
 } from "../controllers/conversationController.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { multerErrorHandling } from "../middlewares/multerError.middleware.js";
@@ -18,7 +19,16 @@ router.get(
   checkToken,
   getMessagesByConversationId
 );
-router.get("/:conversationId/user/:userId/last-message", getLastSeenMessageId);
+router.get(
+  "/:conversationId/user/:userId/last-message",
+  checkToken,
+  getLastSeenMessageId
+);
+router.get(
+  "/:conversationId/user/:userId/last-seen",
+  checkToken,
+  getLastSeenByUserId
+);
 router.post(
   "/message",
   checkToken,
@@ -26,6 +36,6 @@ router.post(
   multerErrorHandling,
   sendMessage
 );
-router.patch("/seen", checkToken, updateLastSeenByParticipantId);
+router.patch("/:conversationId/last-seen", checkToken, updateLastSeenByUserId);
 
 export default router;

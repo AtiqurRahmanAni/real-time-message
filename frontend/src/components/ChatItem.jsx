@@ -1,30 +1,21 @@
 import React from "react";
 import { useAuthContext } from "../context/AuthContextProvider";
-import { useQueryClient } from "@tanstack/react-query";
 
 const ChatItem = ({
   message,
   onImageClick,
-  senderUsername = null,
-  lastMessageViewersIds = null,
+  isLastMessage = false,
+  lastSeenTimeOfReceiver = null,
 }) => {
   const { user } = useAuthContext();
-  const queryClient = useQueryClient();
 
-  let seenBy = "";
-  if (lastMessageViewersIds) {
-    const cachedUsers = queryClient.getQueryData(["getConversations"])?.data;
-    lastMessageViewersIds.forEach((id, idx) => {
-      const username = cachedUsers.find(
-        (cachedUser) => cachedUser._id === id
-      ).username;
+  // determine seen status of this message by other user
+  const isSeen = () => {
+    const createdAt = new Date(message.createdAt);
+    const lastSeenOfReceiver = new Date(lastSeenTimeOfReceiver);
 
-      seenBy += username;
-      if (idx < lastMessageViewersIds.length - 1) {
-        seenBy += ", ";
-      }
-    });
-  }
+    return createdAt <= lastSeenOfReceiver;
+  };
 
   return (
     <li
@@ -34,8 +25,7 @@ const ChatItem = ({
         message.senderId === user._id ? "justify-end text-end" : "justify-start"
       }`}
     >
-      <div className="max-w-full xl:max-w-[60%] ">
-        {senderUsername && <div className="text-xs ml-1">{senderUsername}</div>}
+      <div className="max-w-full xl:max-w-[60%] cursor-pointer">
         <div
           className={`rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
@@ -62,7 +52,11 @@ const ChatItem = ({
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
-        {lastMessageViewersIds && <div className="text-xs">{seenBy}</div>}
+        {/* if the message sender is me, then show "seen" if it is seen by the receiver */}
+        {lastSeenTimeOfReceiver &&
+          message.senderId === user._id &&
+          isSeen() &&
+          isLastMessage && <div className="text-xs">Seen</div>}
       </div>
     </li>
   );
