@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthContext } from "../context/AuthContextProvider";
 import GroupMessageInput from "./GroupMessageInput";
 import axiosInstance from "../utils/axiosInstance";
+import GroupChatItem from "./GroupChatItem";
 
 const GroupInbox = () => {
   const selectedGroup = groupStore((state) => state.selectedGroup);
@@ -30,12 +31,12 @@ const GroupInbox = () => {
   );
 
   const {
-    data: messageViewers,
-    isLoading: isMessageViewersLoading,
-    error: messageViewersError,
+    data: lastSeenList,
+    isLoading: isLastSeenListLoading,
+    error: lastSeenListError,
   } = useFetchData(
-    ["lastSeenGroupMessages", selectedGroup?._id],
-    `group-conversation/group/${selectedGroup._id}/last-seen-message-by/${user._id}`,
+    ["lastSeenOfParticipants", selectedGroup?._id],
+    `group-conversation/group/${selectedGroup._id}/participants-last-seen`,
     {
       enabled: !!(groupMessages?.data?.length > 0 && selectedGroup?._id),
     }
@@ -70,7 +71,7 @@ const GroupInbox = () => {
       behavior: "auto",
       block: "end",
     });
-  }, [groupMessages]);
+  }, [groupMessages, lastSeenList]);
 
   const onImageClick = (imageUrl) => {
     console.log(imageUrl);
@@ -90,8 +91,8 @@ const GroupInbox = () => {
         </div>
       ) : (
         <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-          {/* {groupMessages?.data?.map((message) => (
-            <ChatItem
+          {groupMessages?.data?.map((message) => (
+            <GroupChatItem
               key={message._id}
               message={message}
               onImageClick={onImageClick}
@@ -100,13 +101,9 @@ const GroupInbox = () => {
                   ? getSenderUsername(message.senderId)
                   : null
               }
-              lastMessageViewersIds={
-                messageViewers?.data?.find(
-                  (entry) => entry.lastMessageId === message._id
-                )?.viewerIds
-              }
+              lastSeenTimeOfParticipants={lastSeenList?.data}
             />
-          ))} */}
+          ))}
           <div ref={messagesEndRef} />
         </ul>
       )}
