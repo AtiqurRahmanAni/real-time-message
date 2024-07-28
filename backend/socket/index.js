@@ -1,16 +1,9 @@
-import {
-  ChatEventEnum,
-  ChatRoomEnum,
-  GroupChatEventEnum,
-} from "../constants/index.js";
+import { ChatEventEnum, GroupChatEventEnum } from "../constants/index.js";
 
 const onlineUsers = new Set();
 
 export const initSocket = (io) => {
   return io.on("connection", (socket) => {
-    // each connection will join this room so that if a new user signup, he will appear in the sidebar
-    socket.join(ChatRoomEnum.NEW_USER_ROOM);
-
     const userId = socket.handshake.query?.userId || "";
 
     socket.join(userId);
