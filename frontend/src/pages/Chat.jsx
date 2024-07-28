@@ -17,7 +17,7 @@ const Chat = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const [selectedTab, setSelectedTab] = useState(1); // 0 for chat, 1 for group chat
+  const [selectedTab, setSelectedTab] = useState(0); // 0 for chat, 1 for group chat
   const queryClient = useQueryClient();
 
   const { user } = useAuthContext();
@@ -47,7 +47,7 @@ const Chat = () => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on(ChatEventEnum.NEW_USER_EVENT, onNewUser);
+    socket.on(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
     socket.on(ChatEventEnum.USER_ONLINE, handleUserOnline);
     socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
@@ -64,7 +64,7 @@ const Chat = () => {
     socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
 
     return () => {
-      socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
+      socket.off(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
       socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
       socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);

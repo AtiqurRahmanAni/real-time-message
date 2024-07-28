@@ -18,7 +18,7 @@ export const ChatEventEnum = Object.freeze({
   // ? when participant starts typing
   TYPING_EVENT: "typing",
   // ? when a new user signup
-  NEW_USER_EVENT: "newUser",
+  NEW_USER_CREATE_EVENT: "newUserCreate",
   // ? when a new user comes online
   USER_ONLINE: "userOnline",
   // ? when a new user goes offline

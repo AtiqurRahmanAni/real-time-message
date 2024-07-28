@@ -67,10 +67,7 @@ export const signup = asyncHandler(async (req, res) => {
     password: hashedPassword,
   });
 
-  req.app
-    .get("io")
-    .in(ChatRoomEnum.NEW_USER_ROOM)
-    .emit(ChatEventEnum.NEW_USER_EVENT, null);
+  req.app.get("io").emit(ChatEventEnum.NEW_USER_CREATE_EVENT);
 
   return res.status(201).json({ message: "Signup successful" });
 });
