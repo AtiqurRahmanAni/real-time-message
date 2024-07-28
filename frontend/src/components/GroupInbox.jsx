@@ -77,7 +77,6 @@ const GroupInbox = () => {
   }, [groupMessages, lastSeenList]);
 
   const onImageClick = (imageUrl) => {
-    console.log(imageUrl);
     selectedImageUrl.current = imageUrl;
     setIsOpen(true);
   };
