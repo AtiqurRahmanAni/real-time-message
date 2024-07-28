@@ -78,11 +78,11 @@ export const initSocket = (io) => {
     // for updating group chat last seen
     socket.on(
       GroupChatEventEnum.GROUP_LAST_SEEN,
-      ({ groupId, lastSeen, receiverIds }) => {
+      ({ groupId, updatedParticipant, receiverIds }) => {
         receiverIds.forEach((receiverId) => {
           io.to(receiverId).emit(GroupChatEventEnum.GROUP_LAST_SEEN, {
             groupId,
-            lastSeen, // this is an array of object
+            updatedParticipant, // this is an array of object
           });
         });
       }

@@ -61,7 +61,7 @@ const Chat = () => {
     );
     socket.on(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, onGroupMessageSeen);
     socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
-    socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageLastSeen);
+    socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
@@ -81,10 +81,7 @@ const Chat = () => {
         onGroupMessageSeen
       );
       socket.off(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
-      socket.off(
-        GroupChatEventEnum.GROUP_LAST_SEEN,
-        handleGroupMessageLastSeen
-      );
+      socket.off(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
     };
   }, [socket]);
 
@@ -325,6 +322,11 @@ const Chat = () => {
     },
     onSuccess: (response) => {
       const participantsLastSeen = response.data;
+
+      // find me from the participant list
+      const updatedParticipant = participantsLastSeen.find(
+        (participant) => participant.participantId === user._id
+      );
       /*
       emit an event to all the group participants
       with the updated last seen
@@ -336,7 +338,7 @@ const Chat = () => {
 
         socket.emit(GroupChatEventEnum.GROUP_LAST_SEEN, {
           groupId: selectedGroup._id,
-          lastSeen: participantsLastSeen,
+          updatedParticipant,
           receiverIds,
         });
       }
@@ -442,13 +444,25 @@ const Chat = () => {
   };
 
   // for updating the seen message in a group
-  const handleGroupMessageLastSeen = ({ groupId, lastSeen }) => {
+  const handleGroupMessageSeen = ({ groupId, updatedParticipant }) => {
     queryClient.setQueryData(["lastSeenOfParticipants", groupId], (oldData) => {
       if (!oldData) return;
+      const participantsLastSeen = [...oldData.data];
+
+      const idx = participantsLastSeen.findIndex(
+        (participant) =>
+          participant.participantId === updatedParticipant.participantId
+      );
+
+      if (idx === -1) {
+        participantsLastSeen.push(updatedParticipant);
+      } else {
+        participantsLastSeen[idx] = updatedParticipant;
+      }
 
       return {
         ...oldData,
-        data: lastSeen,
+        data: participantsLastSeen,
       };
     });
   };
