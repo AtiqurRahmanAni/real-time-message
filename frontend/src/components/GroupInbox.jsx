@@ -91,7 +91,7 @@ const GroupInbox = () => {
         </div>
       ) : (
         <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-          {groupMessages?.data?.map((message) => (
+          {groupMessages?.data?.map((message, idx) => (
             <GroupChatItem
               key={message._id}
               message={message}
@@ -101,6 +101,7 @@ const GroupInbox = () => {
                   ? getSenderUsername(message.senderId)
                   : null
               }
+              isLastMessage={idx === groupMessages.data.length - 1}
               lastSeenTimeOfParticipants={lastSeenList?.data}
             />
           ))}

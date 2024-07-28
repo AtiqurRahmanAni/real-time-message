@@ -5,6 +5,7 @@ import groupStore from "../stores/groupStore";
 import conversationStore from "../stores/conversationStore";
 import socketStore from "../stores/socketStore";
 import { GroupChatEventEnum } from "../constants";
+import { useQueryClient } from "@tanstack/react-query";
 
 const GroupTabItem = ({ item }) => {
   // for selecting a group
@@ -14,8 +15,16 @@ const GroupTabItem = ({ item }) => {
     (state) => state.setSelectedConversation
   );
   const socket = socketStore((state) => state.socket);
-
   const { user } = useAuthContext();
+
+  const queryClient = useQueryClient();
+  const cachedUsers = queryClient.getQueryData(["getConversations"])?.data;
+
+  const getMessageSenderUsername = () => {
+    return cachedUsers?.find(
+      (cachedUser) => cachedUser._id === item?.lastMessage.senderId
+    ).username;
+  };
 
   const onGroupSelect = (newSelectedGroup) => {
     setSelectedGroup(newSelectedGroup);
@@ -32,14 +41,6 @@ const GroupTabItem = ({ item }) => {
       socket.emit(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, {
         selectedGroupId: newSelectedGroup._id,
         room: user._id,
-      });
-
-      // emit an event to the sender side to update lastSeen message
-      socket.emit(GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE, {
-        groupId: newSelectedGroup._id,
-        senderId: newSelectedGroup.lastMessage.senderId,
-        receiverId: user._id,
-        messageId: newSelectedGroup.lastMessage._id,
       });
     }
   };
@@ -60,7 +61,9 @@ const GroupTabItem = ({ item }) => {
         <>
           <p>
             <span className="text-gray-500 font-semibold">
-              {item.lastMessage.senderId === user._id ? "You:" : null}
+              {item.lastMessage.senderId === user._id
+                ? "You:"
+                : `${getMessageSenderUsername()}: `}
             </span>{" "}
             <span>{item.lastMessage.content.substr(0, 8) + "..."}</span>
           </p>

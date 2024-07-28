@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuthContext } from "../context/AuthContextProvider";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -11,6 +11,7 @@ const GroupChatItem = ({
 }) => {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
+  const [showSeenBy, setShowSeenBy] = useState("hidden");
 
   const cachedUsers = queryClient.getQueryData(["getConversations"])?.data;
   let seenBy = "";
@@ -32,6 +33,10 @@ const GroupChatItem = ({
     seenBy = seenBy.slice(0, seenBy.length - 2);
   }
 
+  const toggleShowSeenBy = () => {
+    setShowSeenBy((prev) => (prev === "hidden" ? "block" : "hidden"));
+  };
+
   return (
     <li
       data-id={message._id}
@@ -40,10 +45,13 @@ const GroupChatItem = ({
         message.senderId === user._id ? "justify-end text-end" : "justify-start"
       }`}
     >
-      <div className="max-w-full xl:max-w-[60%] cursor-pointer">
+      <div
+        className="max-w-full xl:max-w-[60%] cursor-pointer"
+        onClick={toggleShowSeenBy}
+      >
         {senderUsername && <div className="text-xs">{senderUsername}</div>}
         <div
-          className={`rounded-lg ${
+          className={`inline-block max-w-full rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
           }`}
         >
@@ -69,7 +77,9 @@ const GroupChatItem = ({
           </div>
         </div>
         {seenBy && message.senderId === user._id && (
-          <div className="text-xs">{seenBy}</div>
+          <div className={`text-xs ${isLastMessage ? "block" : showSeenBy}`}>
+            {seenBy}
+          </div>
         )}
       </div>
     </li>

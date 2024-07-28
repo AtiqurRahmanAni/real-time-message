@@ -85,7 +85,7 @@ const Chat = () => {
     };
   }, [socket]);
 
-  // // for updating the last seen status of a user
+  // for updating the last seen status of a user
   const updateUserLastSeenMutation = useMutation({
     mutationFn: (conversationId) => {
       return axiosInstance.patch(`conversation/${conversationId}/last-seen`, {
