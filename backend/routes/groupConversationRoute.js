@@ -3,9 +3,10 @@ import {
   createGroupByUserIds,
   getGroupMessagesByGroupId,
   getGroupsByParticipantId,
+  getLastSeenOfParticipants,
   getSeenMessagesByReceivers,
   sendGroupMessage,
-  updateLastSeenByGroupId,
+  updateLastSeenOfParticipant,
 } from "../controllers/groupConversationController.js";
 import checkToken from "../middlewares/token.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -24,6 +25,12 @@ router.get(
   checkToken,
   getSeenMessagesByReceivers
 );
+router.get(
+  "/group/:groupId/participants-last-seen",
+  checkToken,
+  getLastSeenOfParticipants
+);
+
 router.post("/group", checkToken, createGroupByUserIds);
 router.post(
   "/group/:groupId/message",
@@ -32,5 +39,9 @@ router.post(
   multerErrorHandling,
   sendGroupMessage
 );
-router.patch("/group/:groupId/last-seen", checkToken, updateLastSeenByGroupId);
+router.patch(
+  "/group/:groupId/participant-last-seen",
+  checkToken,
+  updateLastSeenOfParticipant
+);
 export default router;

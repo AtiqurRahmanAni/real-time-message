@@ -177,6 +177,21 @@ export const getSeenMessagesByReceivers = asyncHandler(async (req, res) => {
   return res.status(200).send(processedData);
 });
 
+export const getLastSeenOfParticipants = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+
+  try {
+    const lastSeenList = await Conversation.findById(groupId).select({
+      participants: true,
+    });
+
+    return res.status(200).send(lastSeenList.participants);
+  } catch (err) {
+    console.error(`Error fetching last seen: ${err}`);
+    throw new InternalServerError(`Error fetching last seen`);
+  }
+});
+
 export const createGroupByUserIds = asyncHandler(async (req, res) => {
   let { userIds, groupName } = req.body;
   userIds = userIds.map((id) => new mongoose.Types.ObjectId(id));
@@ -277,12 +292,12 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
   }
 });
 
-export const updateLastSeenByGroupId = asyncHandler(async (req, res) => {
+export const updateLastSeenOfParticipant = asyncHandler(async (req, res) => {
   const { participantId } = req.body;
   const { groupId } = req.params;
 
   try {
-    const result = await Conversation.updateOne(
+    const result = await Conversation.findOneAndUpdate(
       {
         _id: new mongoose.Types.ObjectId(groupId),
         "participants.participantId": new mongoose.Types.ObjectId(
@@ -291,10 +306,11 @@ export const updateLastSeenByGroupId = asyncHandler(async (req, res) => {
       },
       {
         $set: { "participants.$.lastSeenTime": new Date() },
-      }
+      },
+      { new: true }
     );
 
-    return res.status(200).json({ message: "Last seen updated" });
+    return res.status(200).send(result.participants);
   } catch (err) {
     console.error(`Error updating group last seen: ${err}`);
     throw new InternalServerError("Something went wrong updating seen status");

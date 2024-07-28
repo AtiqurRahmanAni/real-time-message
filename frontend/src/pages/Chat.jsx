@@ -17,7 +17,7 @@ const Chat = () => {
   const selectedConversation = conversationStore(
     (state) => state.selectedConversation
   );
-  const [selectedTab, setSelectedTab] = useState(0); // 0 for chat, 1 for group chat
+  const [selectedTab, setSelectedTab] = useState(1); // 0 for chat, 1 for group chat
   const queryClient = useQueryClient();
 
   const { user } = useAuthContext();
@@ -61,10 +61,7 @@ const Chat = () => {
     );
     socket.on(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, onGroupMessageSeen);
     socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
-    socket.on(
-      GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE,
-      handleGroupMessageLastSeen
-    );
+    socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_EVENT, onNewUser);
@@ -84,14 +81,11 @@ const Chat = () => {
         onGroupMessageSeen
       );
       socket.off(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
-      socket.off(
-        GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE,
-        handleGroupMessageLastSeen
-      );
+      socket.off(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
     };
   }, [socket]);
 
-  // // for updating the last seen status of a user
+  // for updating the last seen status of a user
   const updateUserLastSeenMutation = useMutation({
     mutationFn: (conversationId) => {
       return axiosInstance.patch(`conversation/${conversationId}/last-seen`, {
@@ -274,7 +268,6 @@ const Chat = () => {
     current time if he select a conversation
     */
     updateUserLastSeenMutation.mutate(selectedConversationId);
-
     // set the unseenCount to 0
     queryClient.setQueryData(["getConversations"], (oldData) => {
       if (!oldData) return;
@@ -321,14 +314,34 @@ const Chat = () => {
   const updateUserGroupLastSeenMutation = useMutation({
     mutationFn: (groupId) => {
       return axiosInstance.patch(
-        `group-conversation/group/${groupId}/last-seen`,
+        `group-conversation/group/${groupId}/participant-last-seen`,
         {
           participantId: user._id,
         }
       );
     },
     onSuccess: (response) => {
-      // toast.success(response.data.message);
+      const participantsLastSeen = response.data;
+
+      // find me from the participant list
+      const updatedParticipant = participantsLastSeen.find(
+        (participant) => participant.participantId === user._id
+      );
+      /*
+      emit an event to all the group participants
+      with the updated last seen
+      */
+      if (socket) {
+        const receiverIds = participantsLastSeen
+          .filter((entry) => entry.participantId !== user._id)
+          .map((entry) => entry.participantId);
+
+        socket.emit(GroupChatEventEnum.GROUP_LAST_SEEN, {
+          groupId: selectedGroup._id,
+          updatedParticipant,
+          receiverIds,
+        });
+      }
     },
     onError: (error) => {
       toast.error(
@@ -402,14 +415,6 @@ const Chat = () => {
       message.senderId !== user._id
     ) {
       updateUserGroupLastSeenMutation.mutate(group._id);
-
-      // emit an event to the sender side to update lastSeen message
-      socket.emit(GroupChatEventEnum.GROUP_LAST_SEEN_MESSAGE, {
-        groupId: group._id,
-        senderId: message.senderId,
-        receiverId: user._id,
-        messageId: message._id,
-      });
     }
   };
 
@@ -439,55 +444,25 @@ const Chat = () => {
   };
 
   // for updating the seen message in a group
-  const handleGroupMessageLastSeen = ({ groupId, receiverId, messageId }) => {
-    // queryClient.invalidateQueries(["lastSeenGroupMessages", groupId]);
-    // fetch result format
-    // [
-    //   {
-    //     lastMessageId: "66a3d1fd69dbb7de78fd4040",
-    //     viewerIds: ["66a0954399ea88e113c066c9", "66a0953999ea88e113c066c6"],
-    //   },
-    // ];
-    queryClient.setQueryData(["lastSeenGroupMessages", groupId], (oldData) => {
+  const handleGroupMessageSeen = ({ groupId, updatedParticipant }) => {
+    queryClient.setQueryData(["lastSeenOfParticipants", groupId], (oldData) => {
       if (!oldData) return;
-      const lastSeenMessageLists = [...oldData.data];
+      const participantsLastSeen = [...oldData.data];
 
-      // first un group the response
-      let unGroupList = [];
-      lastSeenMessageLists.forEach((item) => {
-        const viewerIds = item.viewerIds;
-        viewerIds.forEach((id) => {
-          if (id !== receiverId) {
-            unGroupList.push({
-              lastMessageId: item.lastMessageId,
-              viewerId: id,
-            });
-          }
-        });
-      });
+      const idx = participantsLastSeen.findIndex(
+        (participant) =>
+          participant.participantId === updatedParticipant.participantId
+      );
 
-      // push the newly seen message to the unGroupList
-      unGroupList.push({ lastMessageId: messageId, viewerId: receiverId });
-
-      // now group the data on viewerIds
-      let groupedData = [];
-      for (const entry of unGroupList) {
-        const idx = groupedData.findIndex(
-          (gd) => gd?.lastMessageId === entry.lastMessageId
-        );
-        if (idx === -1) {
-          groupedData.push({
-            lastMessageId: entry.lastMessageId,
-            viewerIds: [entry.viewerId],
-          });
-        } else {
-          groupedData[idx].viewerIds.push(entry.viewerId);
-        }
+      if (idx === -1) {
+        participantsLastSeen.push(updatedParticipant);
+      } else {
+        participantsLastSeen[idx] = updatedParticipant;
       }
 
       return {
         ...oldData,
-        data: groupedData,
+        data: participantsLastSeen,
       };
     });
   };

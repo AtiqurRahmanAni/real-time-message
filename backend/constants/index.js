@@ -43,7 +43,7 @@ export const GroupChatEventEnum = Object.freeze({
   // ? when participant stops typing
   STOP_GROUP_TYPING_EVENT: "stopGroupTyping",
   // ? when a user sees a message
-  GROUP_LAST_SEEN_MESSAGE: "groupLastSeenMessage",
+  GROUP_LAST_SEEN: "groupLastSeen",
 });
 
 export const ChatRoomEnum = Object.freeze({
