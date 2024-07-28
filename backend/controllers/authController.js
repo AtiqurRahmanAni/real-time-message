@@ -4,7 +4,7 @@ import { NotFoundError, BadRequestError } from "../utils/errors.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { hashPassword, comparePassword } from "../utils/index.js";
 import LoginDto from "../dto/loginDto.js";
-import { ChatEventEnum, ChatRoomEnum } from "../constants/index.js";
+import { ChatEventEnum } from "../constants/index.js";
 
 const lifetime = "36000000";
 

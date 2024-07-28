@@ -1,15 +1,17 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import Conversation from "../models/conversation.js";
 import mongoose from "mongoose";
-import {
-  BadRequestError,
-  InternalServerError,
-  NotFoundError,
-} from "../utils/errors.js";
+import { BadRequestError, InternalServerError } from "../utils/errors.js";
 import GroupMessage from "../models/groupMessage.js";
 import { GroupChatEventEnum } from "../constants/index.js";
 import GroupMessageDto from "../dto/groupMessageDto.js";
-import { response } from "express";
+import { v2 as cloudinary } from "cloudinary";
+import "dotenv/config";
+import pLimit from "p-limit";
+import { deleteFiles } from "../utils/index.js";
+
+const NODE_ENV = process.env.NODE_ENV;
+const limit = pLimit(10);
 
 export const getGroupsByParticipantId = asyncHandler(async (req, res) => {
   let { participantId } = req.params;
@@ -112,71 +114,6 @@ export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
   }
 });
 
-export const getSeenMessagesByReceivers = asyncHandler(async (req, res) => {
-  let { groupId, senderId } = req.params;
-
-  groupId = new mongoose.Types.ObjectId(groupId);
-  senderId = new mongoose.Types.ObjectId(senderId);
-  // get the receivers
-  const receivers = (
-    await Conversation.aggregate([
-      { $match: { _id: groupId } },
-      {
-        $project: {
-          participants: {
-            $filter: {
-              input: "$participants",
-              as: "participant",
-              cond: { $ne: ["$$participant.participantId", senderId] },
-            },
-          },
-        },
-      },
-    ])
-  )[0];
-
-  if (!receivers) {
-    throw new NotFoundError("not found");
-  }
-
-  // find the lastSeen messageId of each receivers
-  const result = [];
-  for (const participant of receivers.participants) {
-    const lastMessage = await GroupMessage.findOne({
-      groupId: groupId,
-      senderId: senderId,
-      receiverIds: participant.participantId,
-      createdAt: { $lte: participant.lastSeenTime },
-    })
-      .sort({ createdAt: -1 })
-      .select({ _id: true });
-
-    if (lastMessage) {
-      result.push({
-        receiverId: participant.participantId,
-        lastMessageId: lastMessage._id,
-      });
-    }
-  }
-
-  let processedData = [];
-  for (const entry of result) {
-    const idx = processedData.findIndex(
-      (pd) => pd?.lastMessageId === entry.lastMessageId.toString()
-    );
-    if (idx === -1) {
-      processedData.push({
-        lastMessageId: entry.lastMessageId.toString(),
-        viewerIds: [entry.receiverId],
-      });
-    } else {
-      processedData[idx].viewerIds.push(entry.receiverId);
-    }
-  }
-
-  return res.status(200).send(processedData);
-});
-
 export const getLastSeenOfParticipants = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
 
@@ -224,12 +161,31 @@ export const createGroupByUserIds = asyncHandler(async (req, res) => {
 export const sendGroupMessage = asyncHandler(async (req, res) => {
   let { groupId } = req.params;
   let { content, senderId } = req.body;
+  const { attachments } = req.files;
+
   groupId = new mongoose.Types.ObjectId(groupId);
   senderId = new mongoose.Types.ObjectId(senderId);
   const session = await mongoose.startSession();
 
   try {
     session.startTransaction();
+
+    const attachmentsToUpload = attachments?.map((attachment) => {
+      return limit(
+        async () =>
+          await cloudinary.uploader.upload(attachment.path, {
+            folder:
+              NODE_ENV === "development"
+                ? "group_attachments_dev"
+                : "group_attachments",
+          })
+      );
+    });
+
+    let attachmentsUploadResult = null;
+    if (attachments) {
+      attachmentsUploadResult = await Promise.all(attachmentsToUpload);
+    }
 
     const group = await Conversation.findOne({
       _id: groupId,
@@ -256,6 +212,10 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
           content,
           senderId,
           receiverIds,
+          attachments: attachmentsUploadResult?.map((item) => ({
+            url: item.secure_url,
+            publicId: item.public_id,
+          })),
         },
       ],
       { session }
@@ -289,6 +249,9 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     throw new InternalServerError("Error sending group message");
   } finally {
     session.endSession();
+    if (attachments) {
+      deleteFiles(attachments.map((item) => item.path));
+    }
   }
 });
 

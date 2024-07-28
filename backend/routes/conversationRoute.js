@@ -4,7 +4,6 @@ import {
   getConversationsByUserId,
   sendMessage,
   getMessagesByConversationId,
-  getLastSeenMessageId,
   getLastSeenByUserId,
   updateLastSeenByUserId,
 } from "../controllers/conversationController.js";
@@ -18,11 +17,6 @@ router.get(
   "/:conversationId/messages",
   checkToken,
   getMessagesByConversationId
-);
-router.get(
-  "/:conversationId/user/:userId/last-message",
-  checkToken,
-  getLastSeenMessageId
 );
 router.get(
   "/:conversationId/user/:userId/last-seen",

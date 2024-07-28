@@ -152,8 +152,6 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
               type="file"
               multiple={true}
               accept="image/jpeg,image/png,image/jpg"
-              // I will enable this later
-              disabled
               onChange={onAttachmentSelect}
             />
           </div>
