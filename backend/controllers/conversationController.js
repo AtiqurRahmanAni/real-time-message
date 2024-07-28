@@ -3,7 +3,7 @@ import Conversation from "../models/conversation.js";
 import MessageDto from "../dto/messageDto.js";
 import Users from "../models/user.js";
 import Message from "../models/message.js";
-import { InternalServerError, NotFoundError } from "../utils/errors.js";
+import { InternalServerError } from "../utils/errors.js";
 import mongoose from "mongoose";
 import { ChatEventEnum } from "../constants/index.js";
 import { deleteFiles } from "../utils/index.js";
@@ -200,11 +200,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
   const { senderId, receiverId, content } = req.body;
   const { attachments } = req.files;
 
-  const session = await mongoose.startSession();
-
   try {
-    session.startTransaction();
-
     const attachmentsToUpload = attachments?.map((attachment) => {
       return limit(
         async () =>
@@ -229,44 +225,36 @@ export const sendMessage = asyncHandler(async (req, res) => {
         ],
         $size: 2,
       },
-    })
-      .select({ __v: false })
-      .session(session);
+    }).select({ __v: false });
 
     conversation =
       conversation ||
       (
-        await Conversation.create(
-          [
-            {
-              participants: [
-                { participantId: senderId, lastSeenTime: new Date() },
-                {
-                  participantId: receiverId,
-                  lastSeenTime: new Date("1995-12-17T00:00:00"), // if there is a new conversation, set the receiver lastSeenTime to the past so that when the messages are fetched, it will show the correct count
-                },
-              ],
-            },
-          ],
-          { session }
-        )
+        await Conversation.create([
+          {
+            participants: [
+              { participantId: senderId, lastSeenTime: new Date() },
+              {
+                participantId: receiverId,
+                lastSeenTime: new Date("1995-12-17T00:00:00"), // if there is a new conversation, set the receiver lastSeenTime to the past so that when the messages are fetched, it will show the correct count
+              },
+            ],
+          },
+        ])
       )[0];
 
-    const newMessage = await Message.create(
-      [
-        {
-          conversationId: conversation._id,
-          content: content,
-          senderId: senderId,
-          receiverId: receiverId,
-          attachments: attachmentsUploadResult?.map((item) => ({
-            url: item.secure_url,
-            publicId: item.public_id,
-          })),
-        },
-      ],
-      { session }
-    );
+    const newMessage = await Message.create([
+      {
+        conversationId: conversation._id,
+        content: content,
+        senderId: senderId,
+        receiverId: receiverId,
+        attachments: attachmentsUploadResult?.map((item) => ({
+          url: item.secure_url,
+          publicId: item.public_id,
+        })),
+      },
+    ]);
 
     const updatedConversation = await Conversation.findOneAndUpdate(
       { _id: conversation._id, "participants.participantId": senderId },
@@ -276,12 +264,10 @@ export const sendMessage = asyncHandler(async (req, res) => {
           lastMessageId: newMessage[0]._id, //newMessage is an array
         },
       },
-      { new: true, session }
+      { new: true }
     );
 
     const message = new MessageDto(newMessage[0]);
-
-    await session.commitTransaction();
 
     /* new message will receive through socket connection both sender and receiver, 
     this is handy if sender is logged in multiple devices. sent message will appear 
@@ -299,11 +285,9 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     return res.status(200).json({ message: "Message sent" });
   } catch (err) {
-    await session.abortTransaction();
     console.error(`Error sending message: ${err}`);
     throw new InternalServerError("Error sending message");
   } finally {
-    session.endSession();
     if (attachments) {
       deleteFiles(attachments.map((item) => item.path));
     }

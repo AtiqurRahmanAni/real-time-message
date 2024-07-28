@@ -52,14 +52,11 @@ const Inbox = () => {
           "Content-Type": "multipart/form-data",
         },
       }),
-    // onSuccess: (data) => {
-    //   console.log(data);
-    // },
     onError: (error) => {
       toast.error(
         error.response ? error.response.data.message : "Something went wrong"
       );
-      if (error?.response?.status === 401) {
+      if (error?.response.status === 401) {
         logoutActions();
       }
     },

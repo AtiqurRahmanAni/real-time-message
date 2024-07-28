@@ -165,11 +165,8 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
 
   groupId = new mongoose.Types.ObjectId(groupId);
   senderId = new mongoose.Types.ObjectId(senderId);
-  const session = await mongoose.startSession();
 
   try {
-    session.startTransaction();
-
     const attachmentsToUpload = attachments?.map((attachment) => {
       return limit(
         async () =>
@@ -190,9 +187,7 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
     const group = await Conversation.findOne({
       _id: groupId,
       isGroupConversation: true,
-    })
-      .select({ participants: true, lastMessageId: true })
-      .session(session);
+    }).select({ participants: true, lastMessageId: true });
 
     let receiverIds = [];
     let indexOfSender = -1;
@@ -205,29 +200,24 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
       }
     }
 
-    let newMessage = await GroupMessage.create(
-      [
-        {
-          groupId,
-          content,
-          senderId,
-          receiverIds,
-          attachments: attachmentsUploadResult?.map((item) => ({
-            url: item.secure_url,
-            publicId: item.public_id,
-          })),
-        },
-      ],
-      { session }
-    );
+    let newMessage = await GroupMessage.create([
+      {
+        groupId,
+        content,
+        senderId,
+        receiverIds,
+        attachments: attachmentsUploadResult?.map((item) => ({
+          url: item.secure_url,
+          publicId: item.public_id,
+        })),
+      },
+    ]);
     newMessage = newMessage[0];
 
     group.participants[indexOfSender].lastSeenTime = new Date();
     group.lastMessageId = newMessage._id;
 
-    await group.save({ session });
-
-    await session.commitTransaction();
+    await group.save();
 
     // emit message receive event to the group members
     group.participants.forEach((participant) => {
@@ -244,11 +234,9 @@ export const sendGroupMessage = asyncHandler(async (req, res) => {
 
     return res.status(200).json({ message: "Message sent" });
   } catch (err) {
-    await session.abortTransaction();
     console.error(`Error sending group message: ${err}`);
     throw new InternalServerError("Error sending group message");
   } finally {
-    session.endSession();
     if (attachments) {
       deleteFiles(attachments.map((item) => item.path));
     }

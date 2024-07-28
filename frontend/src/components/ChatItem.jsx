@@ -36,7 +36,7 @@ const ChatItem = ({
               {message.attachments.map((item, idx) => (
                 <div
                   key={idx}
-                  className="cursor-pointer"
+                  className="cursor-pointer max-w-[400px]"
                   onClick={() => onImageClick(item.url)}
                 >
                   <img

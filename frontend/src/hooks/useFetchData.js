@@ -15,9 +15,8 @@ const useFetchData = (queryKey, url, options = {}) => {
   useEffect(() => {
     if (error) {
       if (error.response && error.response.status === 401) {
+        toast.error(error.response.data.message);
         logoutActions();
-      } else {
-        toast.error("Something went wrong");
       }
     }
   }, [error, logoutActions]);

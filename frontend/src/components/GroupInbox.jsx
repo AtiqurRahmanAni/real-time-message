@@ -23,8 +23,8 @@ const GroupInbox = () => {
 
   const {
     data: groupMessages,
-    isLoading,
-    error,
+    isLoading: isGroupMessagesLoading,
+    error: groupMessagesError,
   } = useFetchData(
     ["getGroupMessages", selectedGroup?._id],
     `group-conversation/group/${selectedGroup?._id}/message`,
@@ -56,14 +56,11 @@ const GroupInbox = () => {
           },
         }
       ),
-    // onSuccess: (data) => {
-    //   console.log(data);
-    // },
     onError: (error) => {
       toast.error(
         error.response ? error.response.data.message : "Something went wrong"
       );
-      if (error?.response?.status === 401) {
+      if (error?.response.status === 401) {
         logoutActions();
       }
     },
@@ -88,7 +85,7 @@ const GroupInbox = () => {
   return (
     <>
       <div className="relative flex-1 max-w-[calc(100vw-25rem)] min-h-[calc(100dvh-4.45rem)] ml-4">
-        {isLoading ? (
+        {isGroupMessagesLoading ? (
           <div className="h-full flex justify-center items-center">
             <SpinnerBlock />
           </div>
@@ -113,7 +110,7 @@ const GroupInbox = () => {
         )}
         <div className="absolute bottom-0 w-full">
           <GroupMessageInput
-            disabled={isLoading}
+            disabled={isGroupMessagesLoading || isLastSeenListLoading}
             onSendButtonClick={(formData) =>
               messageSendMutation.mutate(formData)
             }
