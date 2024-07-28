@@ -9,7 +9,9 @@ import { ChatEventEnum } from "../constants/index.js";
 import { deleteFiles } from "../utils/index.js";
 import pLimit from "p-limit";
 import { v2 as cloudinary } from "cloudinary";
+import "dotenv/config";
 
+const NODE_ENV = process.env.NODE_ENV;
 const limit = pLimit(10);
 
 export const getConversationByParticipantIds = asyncHandler(
@@ -144,57 +146,6 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   return res.status(200).send(messages.reverse());
 });
 
-export const getLastSeenMessageId = asyncHandler(async (req, res) => {
-  let { conversationId, userId } = req.params;
-  conversationId = new mongoose.Types.ObjectId(conversationId);
-  userId = new mongoose.Types.ObjectId(userId);
-
-  const result = await Conversation.aggregate([
-    { $match: { _id: conversationId } },
-    { $unwind: "$participants" },
-    {
-      $match: {
-        "participants.participantId": new mongoose.Types.ObjectId(userId),
-      },
-    },
-    {
-      $lookup: {
-        from: "messages",
-        let: {
-          conversationId: "$_id",
-          lastSeenTime: "$participants.lastSeenTime",
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$conversationId", "$$conversationId"] },
-                  { $lte: ["$createdAt", "$$lastSeenTime"] },
-                  { $eq: ["$receiverId", userId] },
-                ],
-              },
-            },
-          },
-          { $sort: { createdAt: -1 } },
-          { $limit: 1 },
-        ],
-        as: "lastMessage",
-      },
-    },
-    {
-      $project: {
-        _id: { $arrayElemAt: ["$lastMessage._id", 0] },
-      },
-    },
-  ]);
-
-  if (result.length > 0) {
-    return res.status(200).send(result[0]);
-  }
-  throw new NotFoundError("Last seen time not found");
-});
-
 export const getLastSeenByUserId = asyncHandler(async (req, res) => {
   const { conversationId, userId } = req.params;
 
@@ -249,8 +200,6 @@ export const sendMessage = asyncHandler(async (req, res) => {
   const { senderId, receiverId, content } = req.body;
   const { attachments } = req.files;
 
-  // console.log(senderId, receiverId, content, attachments);
-
   const session = await mongoose.startSession();
 
   try {
@@ -260,7 +209,8 @@ export const sendMessage = asyncHandler(async (req, res) => {
       return limit(
         async () =>
           await cloudinary.uploader.upload(attachment.path, {
-            folder: "attachments",
+            folder:
+              NODE_ENV === "development" ? "attachments_dev" : "attachments",
           }) // cloudinary folder where attachments are stored
       );
     });

@@ -1,18 +1,21 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import useFetchData from "../hooks/useFetchData";
 import groupStore from "../stores/groupStore";
-import ChatItem from "./ChatItem";
 import SpinnerBlock from "../assets/Spinner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthContext } from "../context/AuthContextProvider";
 import GroupMessageInput from "./GroupMessageInput";
 import axiosInstance from "../utils/axiosInstance";
 import GroupChatItem from "./GroupChatItem";
+import toast from "react-hot-toast";
+import ImagePreviewModal from "./ImagePreviewDialog";
 
 const GroupInbox = () => {
   const selectedGroup = groupStore((state) => state.selectedGroup);
+  const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef(null);
   const { user } = useAuthContext();
+  const selectedImageUrl = useRef(null);
 
   const queryClient = useQueryClient();
 
@@ -75,8 +78,8 @@ const GroupInbox = () => {
 
   const onImageClick = (imageUrl) => {
     console.log(imageUrl);
-    // selectedImageUrl.current = imageUrl;
-    // setIsOpen(true);
+    selectedImageUrl.current = imageUrl;
+    setIsOpen(true);
   };
 
   const getSenderUsername = (senderId) => {
@@ -84,37 +87,46 @@ const GroupInbox = () => {
   };
 
   return (
-    <div className="relative flex-1 max-w-[calc(100vw-25rem)] min-h-[calc(100dvh-4.45rem)] ml-4">
-      {isLoading ? (
-        <div className="h-full flex justify-center items-center">
-          <SpinnerBlock />
+    <>
+      <div className="relative flex-1 max-w-[calc(100vw-25rem)] min-h-[calc(100dvh-4.45rem)] ml-4">
+        {isLoading ? (
+          <div className="h-full flex justify-center items-center">
+            <SpinnerBlock />
+          </div>
+        ) : (
+          <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+            {groupMessages?.data?.map((message, idx) => (
+              <GroupChatItem
+                key={message._id}
+                message={message}
+                onImageClick={onImageClick}
+                senderUsername={
+                  message.senderId !== user._id
+                    ? getSenderUsername(message.senderId)
+                    : null
+                }
+                isLastMessage={idx === groupMessages.data.length - 1}
+                lastSeenTimeOfParticipants={lastSeenList?.data}
+              />
+            ))}
+            <div ref={messagesEndRef} />
+          </ul>
+        )}
+        <div className="absolute bottom-0 w-full">
+          <GroupMessageInput
+            disabled={isLoading}
+            onSendButtonClick={(formData) =>
+              messageSendMutation.mutate(formData)
+            }
+          />
         </div>
-      ) : (
-        <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-          {groupMessages?.data?.map((message, idx) => (
-            <GroupChatItem
-              key={message._id}
-              message={message}
-              onImageClick={onImageClick}
-              senderUsername={
-                message.senderId !== user._id
-                  ? getSenderUsername(message.senderId)
-                  : null
-              }
-              isLastMessage={idx === groupMessages.data.length - 1}
-              lastSeenTimeOfParticipants={lastSeenList?.data}
-            />
-          ))}
-          <div ref={messagesEndRef} />
-        </ul>
-      )}
-      <div className="absolute bottom-0 w-full">
-        <GroupMessageInput
-          disabled={isLoading}
-          onSendButtonClick={(formData) => messageSendMutation.mutate(formData)}
-        />
       </div>
-    </div>
+      <ImagePreviewModal
+        imageUrl={selectedImageUrl.current}
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+      />
+    </>
   );
 };
 

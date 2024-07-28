@@ -45,7 +45,3 @@ export const GroupChatEventEnum = Object.freeze({
   // ? when a user sees a message
   GROUP_LAST_SEEN: "groupLastSeen",
 });
-
-export const ChatRoomEnum = Object.freeze({
-  NEW_USER_ROOM: "new-user-room",
-});
