@@ -43,13 +43,13 @@ const ChatTabItem = ({ item }) => {
 
   return (
     <li
-      className={`relative px-4 py-2 border border-b-gray-300 hover:bg-gray-200 cursor-pointer ${
-        item._id === selectedConversation?._id ? "bg-gray-300" : ""
+      className={`relative px-4 py-2 border border-gray-700 hover:bg-gray-700 cursor-pointer ${
+        item._id === selectedConversation?._id ? "bg-gray-700/90" : ""
       }`}
       onClick={() => onConversationSelect(item)}
     >
       <div>
-        <p className="text-gray-500 font-semibold text-lg">
+        <p className="text-gray-300/85 font-semibold text-lg">
           {item.displayName}
         </p>
         {onlineUsers.includes(item._id) && (
@@ -59,13 +59,17 @@ const ChatTabItem = ({ item }) => {
       {item?.lastMessage && (
         <>
           <p>
-            <span className="text-gray-500 font-semibold">
+            <span className="text-gray-300/80 font-semibold">
               {item.lastMessage.senderId === user._id ? "You:" : null}
             </span>{" "}
-            <span>{item.lastMessage.content.substr(0, 8) + "..."}</span>
+            <span className="text-gray-300/75">
+              {item.lastMessage.content.substr(0, 8) + "..."}
+            </span>
           </p>
           <p>
-            <span>{formatTimeStamp(item.lastMessage.createdAt)}</span>
+            <span className="text-gray-300/75">
+              {formatTimeStamp(item.lastMessage.createdAt)}
+            </span>
           </p>
         </>
       )}

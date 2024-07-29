@@ -267,3 +267,79 @@ export const updateLastSeenOfParticipant = asyncHandler(async (req, res) => {
     throw new InternalServerError("Something went wrong updating seen status");
   }
 });
+
+export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
+  let { groupId } = req.params;
+  groupId = new mongoose.Types.ObjectId(groupId);
+
+  const session = await mongoose.startSession();
+  session.startTransaction({
+    readConcern: { level: "snapshot" },
+    writeConcern: { w: "majority" },
+    maxCommitTimeMS: 3 * 60 * 1000, // 3 mins
+  });
+
+  try {
+    const attachments = await GroupMessage.aggregate(
+      [
+        {
+          $match: { groupId: groupId },
+        },
+        {
+          $unwind: "$attachments",
+        },
+        {
+          $project: {
+            _id: false,
+            publicId: "$attachments.publicId",
+          },
+        },
+      ],
+      { session }
+    );
+
+    // delete from attachments from cloudinary
+    const deleteAttachmentsResult = await Promise.all(
+      attachments.map((attachment) => {
+        return new Promise((resolve, reject) => {
+          cloudinary.uploader.destroy(attachment.publicId, (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          });
+        });
+      })
+    );
+
+    const messagesDeleteResult = await GroupMessage.deleteMany({
+      groupId,
+    }).session(session);
+
+    const group = await Conversation.findById(groupId.toString()).session(
+      session
+    );
+    group.lastMessageId = null;
+    const participants = group.participants;
+
+    await group.save({ session });
+
+    await session.commitTransaction();
+
+    participants.forEach((participant) => {
+      req.app
+        .get("io")
+        .in(participant.participantId.toString())
+        .emit(GroupChatEventEnum.GROUP_MESSAGE_DELETE);
+    });
+
+    return res.status(200).json({ message: "Messages deleted" });
+  } catch (err) {
+    await session.abortTransaction();
+    console.error(`Error deleting group messages: ${err}`);
+    throw new InternalServerError("Error deleting group messages");
+  } finally {
+    session.endSession();
+  }
+});

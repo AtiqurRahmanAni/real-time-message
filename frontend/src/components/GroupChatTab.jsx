@@ -8,17 +8,17 @@ const GroupChatTab = ({ groups }) => {
 
   return (
     <>
-      <div>
-        <div className="">
+      <div className="border border-gray-600">
+        <div>
           <button
-            className="bg-sky-400 w-full py-2 text-white flex justify-center items-center gap-x-2 hover:bg-sky-500 transition-colors"
+            className="bg-blue-500 w-full py-2 text-white flex justify-center items-center gap-x-2 hover:bg-blue-500/90 transition-colors"
             onClick={() => setIsOpen(true)}
           >
             <IoMdAddCircleOutline className="text-xl" />
             <span>Create group</span>
           </button>
         </div>
-        <ul className="border border-r-gray-300 w-56 max-h-[calc(100dvh-95px)] overflow-y-scroll scrollbar-custom">
+        <ul className="w-56 max-h-[calc(100dvh-10rem)] overflow-y-scroll scrollbar-custom">
           {groups?.map((item) => (
             <GroupTabItem key={item._id} item={item} />
           ))}

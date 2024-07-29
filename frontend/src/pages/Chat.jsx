@@ -61,6 +61,7 @@ const Chat = () => {
     socket.on(GroupChatEventEnum.GROUP_MESSAGE_SEEN_EVENT, onGroupMessageSeen);
     socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
     socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
+    socket.on(GroupChatEventEnum.GROUP_MESSAGE_DELETE, onGroupMessagesDelete);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
@@ -81,6 +82,10 @@ const Chat = () => {
       );
       socket.off(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
       socket.off(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
+      socket.off(
+        GroupChatEventEnum.GROUP_MESSAGE_DELETE,
+        onGroupMessagesDelete
+      );
     };
   }, [socket]);
 
@@ -342,9 +347,9 @@ const Chat = () => {
         });
       }
     },
-    onError: (error) => {
+    onError: (err) => {
       toast.error(
-        error.response ? error.response.data.message : "Something went wrong"
+        err.response ? err.response.data.message : "Something went wrong"
       );
     },
   });
@@ -375,7 +380,8 @@ const Chat = () => {
             then increment the unseen count
             */
             unseenCount:
-              currentSelectedGroup?._id !== group._id
+              currentSelectedGroup?._id !== group._id &&
+              message.senderId !== user._id
                 ? cachedGroup.unseenCount + 1
                 : cachedGroup.unseenCount,
           };
@@ -420,7 +426,6 @@ const Chat = () => {
   const onGroupMessageSeen = (groupId) => {
     // update last seen time of the user
     updateUserGroupLastSeenMutation.mutate(groupId);
-
     queryClient.setQueryData(["getGroups"], (oldData) => {
       if (!oldData) return;
       return {
@@ -440,6 +445,17 @@ const Chat = () => {
   // if new group is created or deleted, fetch the groups again
   const onGroupUpdate = () => {
     queryClient.invalidateQueries({ queryKey: ["getGroups"] });
+  };
+
+  const onGroupMessagesDelete = (groupId) => {
+    /*
+    if selected group is current group and messages are deleted,
+    refetch messages again
+    */
+    if (selectedGroup?._id === groupId) {
+      queryClient.invalidateQueries(["getGroupMessages", groupId]);
+    }
+    queryClient.invalidateQueries(["getGroups"]);
   };
 
   // for updating the seen message in a group
@@ -498,7 +514,7 @@ const Chat = () => {
           <GroupInbox />
         ) : (
           <div className="relative flex-1 min-h-[calc(100dvh-3.5rem)] flex justify-center items-center">
-            <h1 className="font-semibold text-gray-500 text-2xl">
+            <h1 className="font-semibold text-gray-300 text-2xl">
               Select a conversation or group to start
             </h1>
           </div>
