@@ -162,7 +162,7 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
             className="bg-transparent pl-12 pr-14 w-full text-gray-500 focus:outline-none"
             value={messageContent}
             rows={2}
-            maxLength={150}
+            maxLength={400}
             onKeyDown={handleKeyDown}
           />
           <div className="absolute bottom-1/2 translate-y-1/2 right-0">
