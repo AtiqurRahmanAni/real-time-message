@@ -12,6 +12,8 @@ import { ChatEventEnum, GroupChatEventEnum } from "../constants";
 import axiosInstance from "../utils/axiosInstance";
 import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
+import toast from "react-hot-toast";
+import SpinnerBlock from "../assets/Spinner";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -35,13 +37,10 @@ const Chat = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // --------------- for one to one chat ------------------ //
-  const { data: conversations } = useFetchData(
-    ["getConversations"],
-    `/conversation/${user._id}`,
-    {
+  const { data: conversations, isLoading: isConversationsLoading } =
+    useFetchData(["getConversations"], `/conversation/${user._id}`, {
       refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
-    }
-  );
+    });
 
   // socket configuration
   useEffect(() => {
@@ -483,8 +482,15 @@ const Chat = () => {
               isActive={selectedTab === 1}
             />
           </div>
-          {selectedTab === 0 && <ChatTab conversations={conversations?.data} />}
-          {selectedTab === 1 && <GroupChatTab groups={groups?.data} />}
+          {isGroupLoading || isConversationsLoading ? (
+            <div className="min-h-[calc(100dvh-95px)] flex justify-center items-center w-56">
+              <SpinnerBlock />
+            </div>
+          ) : selectedTab === 0 ? (
+            <ChatTab conversations={conversations?.data} />
+          ) : (
+            <GroupChatTab groups={groups?.data} />
+          )}
         </div>
         {selectedConversation ? (
           <Inbox />

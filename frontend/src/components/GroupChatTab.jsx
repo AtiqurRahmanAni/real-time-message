@@ -18,7 +18,7 @@ const GroupChatTab = ({ groups }) => {
             <span>Create group</span>
           </button>
         </div>
-        <ul className="border border-r-gray-300 w-56">
+        <ul className="border border-r-gray-300 w-56 max-h-[calc(100dvh-95px)] overflow-y-scroll scrollbar-custom">
           {groups?.map((item) => (
             <GroupTabItem key={item._id} item={item} />
           ))}

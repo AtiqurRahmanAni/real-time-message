@@ -67,7 +67,6 @@ const GroupChatItem = ({
                     className="w-full h-full"
                     src={item.url}
                     alt="attachment"
-                    loading="lazy"
                   />
                 </div>
               ))}

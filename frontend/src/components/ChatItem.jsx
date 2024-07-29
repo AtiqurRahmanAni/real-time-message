@@ -42,7 +42,6 @@ const ChatItem = ({
                   <img
                     className="w-full h-full"
                     src={item.url}
-                    loading="lazy"
                     alt="attachment"
                   />
                 </div>
