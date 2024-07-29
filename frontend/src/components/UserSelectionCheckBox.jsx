@@ -17,7 +17,7 @@ const UserSelectionCheckBox = ({ userId, addUser, removeUser }) => {
     <Checkbox
       checked={enabled}
       onChange={handleChange}
-      className="group block size-[20px] rounded border bg-white data-[checked]:bg-gray-500"
+      className="group block size-[20px] rounded border bg-gray-200 data-[checked]:bg-gray-400/70"
     >
       <svg
         className="stroke-white opacity-0 group-data-[checked]:opacity-100"

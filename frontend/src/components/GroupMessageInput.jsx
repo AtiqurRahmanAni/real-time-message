@@ -1,13 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import MessageSendButton from "./MessageSendButton";
-// import socketStore from "../stores/socketStore";
-// import { ChatEventEnum, GroupChatEventEnum } from "../constants/index.js";
-// import conversationStore from "../stores/conversationStore.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import AttachmentButton from "./AttachmentButton.jsx";
 import CloseButton from "./CloseButton.jsx";
 import toast from "react-hot-toast";
-// import groupStore from "../stores/groupStore.js";
 
 const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
   const [messageContent, setMessageContent] = useState("");
@@ -119,7 +115,7 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
           <span>{selectedConversation.displayName} is typing...</span>
         </div>
       )} */}
-      <div className="bg-gray-200 rounded-xl p-2">
+      <div className="bg-gray-600 rounded-xl p-2">
         {attachments.length > 0 && (
           <div className="flex gap-2.5 flex-wrap mb-2">
             {attachments.map((item, idx) => (
@@ -159,7 +155,7 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
           <textarea
             onChange={handleTextInputChange}
             onBlur={handleOnBlur}
-            className="bg-transparent pl-12 pr-14 w-full text-gray-500 focus:outline-none"
+            className="bg-transparent pl-12 pr-14 w-full text-gray-200 focus:outline-none"
             value={messageContent}
             rows={2}
             maxLength={150}

@@ -420,7 +420,6 @@ const Chat = () => {
   const onGroupMessageSeen = (groupId) => {
     // update last seen time of the user
     updateUserGroupLastSeenMutation.mutate(groupId);
-
     queryClient.setQueryData(["getGroups"], (oldData) => {
       if (!oldData) return;
       return {
@@ -498,7 +497,7 @@ const Chat = () => {
           <GroupInbox />
         ) : (
           <div className="relative flex-1 min-h-[calc(100dvh-3.5rem)] flex justify-center items-center">
-            <h1 className="font-semibold text-gray-500 text-2xl">
+            <h1 className="font-semibold text-gray-300 text-2xl">
               Select a conversation or group to start
             </h1>
           </div>

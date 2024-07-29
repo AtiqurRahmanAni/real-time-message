@@ -89,10 +89,10 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="w-full max-w-md rounded-xl bg-white p-1 font-roboto">
+              <DialogPanel className="w-full max-w-md rounded-xl bg-gray-700 p-1 font-roboto">
                 <div className="rounded-xl overflow-hidden p-5">
-                  <table className="w-full text-base text-left rtl:text-right text-gray-500">
-                    <thead className="text-md text-gray-700 uppercase bg-gray-100">
+                  <table className=" w-full text-base text-left rtl:text-right text-gray-300">
+                    <thead className="text-md text-gray-300 uppercase bg-gray-800/75">
                       <tr>
                         <th scope="col" className="px-4 py-3">
                           Username

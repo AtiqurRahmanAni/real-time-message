@@ -42,17 +42,19 @@ const GroupChatItem = ({
       data-id={message._id}
       key={message._id}
       className={`flex ${
-        message.senderId === user._id ? "justify-end text-end" : "justify-start"
+        message.senderId === user._id ? "justify-end" : "justify-start"
       }`}
     >
       <div
         className="max-w-full xl:max-w-[60%] cursor-pointer"
         onClick={toggleShowSeenBy}
       >
-        {senderUsername && <div className="text-xs">{senderUsername}</div>}
+        {senderUsername && (
+          <div className="text-xs text-gray-300">{senderUsername}</div>
+        )}
         <div
           className={`inline-block max-w-full rounded-lg ${
-            message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
+            message.senderId === user._id ? "bg-blue-500" : "bg-gray-600"
           }`}
         >
           {message.attachments.length > 0 && (
@@ -72,12 +74,16 @@ const GroupChatItem = ({
               ))}
             </div>
           )}
-          <div className={`px-2 py-1 text-white max-w-full`}>
+          <div className={`px-2 py-1 text-gray-100 max-w-full`}>
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
         {seenBy && message.senderId === user._id && (
-          <div className={`text-xs ${isLastMessage ? "block" : showSeenBy}`}>
+          <div
+            className={`text-end text-xs text-gray-300 ${
+              isLastMessage ? "block" : showSeenBy
+            }`}
+          >
             {seenBy}
           </div>
         )}

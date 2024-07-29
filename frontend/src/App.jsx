@@ -8,7 +8,7 @@ import "./App.css";
 
 const App = () => {
   return (
-    <div className="font-roboto flex flex-col min-h-[100dvh]">
+    <div className="font-roboto flex flex-col min-h-[100dvh] bg-gray-800">
       <Routes>
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Chat />} />

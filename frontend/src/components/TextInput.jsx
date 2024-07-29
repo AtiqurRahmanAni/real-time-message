@@ -116,11 +116,11 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
   return (
     <div className="relative">
       {isOtherUserTyping && (
-        <div className="absolute -top-4 right-3 text-right text-sm text-gray-500">
+        <div className="absolute -top-4 right-3 text-right text-sm text-gray-300">
           <span>{selectedConversation.displayName} is typing...</span>
         </div>
       )}
-      <div className="bg-gray-200 rounded-xl p-2">
+      <div className="bg-gray-600 rounded-xl p-2">
         {attachments.length > 0 && (
           <div className="flex gap-2.5 flex-wrap mb-2">
             {attachments.map((item, idx) => (
@@ -160,7 +160,7 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
           <textarea
             onChange={handleTextInputChange}
             onBlur={handleOnBlur}
-            className="bg-transparent pl-12 pr-14 w-full text-gray-500 focus:outline-none"
+            className="bg-transparent pl-12 pr-14 w-full text-gray-200 focus:outline-none"
             value={messageContent}
             rows={2}
             maxLength={150}

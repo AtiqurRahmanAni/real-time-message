@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import { useAuthContext } from "../context/AuthContextProvider";
@@ -22,9 +22,9 @@ const NavBar = () => {
   });
 
   return (
-    <nav className="sticky top-0 left-0 p-3 bg-gray-200 z-10">
+    <nav className="sticky top-0 left-0 p-3 bg-gray-700 z-10">
       <div className="m-auto flex justify-end container">
-        <div className="flex gap-x-2 items-center">
+        <div className="flex gap-x-2 items-center text-gray-200">
           <div>
             <p>{user.displayName}</p>
           </div>

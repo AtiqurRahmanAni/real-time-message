@@ -28,7 +28,7 @@ const ChatItem = ({
       <div className="max-w-full xl:max-w-[60%] cursor-pointer">
         <div
           className={`rounded-lg ${
-            message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
+            message.senderId === user._id ? "bg-blue-500" : "bg-gray-600"
           }`}
         >
           {message.attachments.length > 0 && (
@@ -48,7 +48,7 @@ const ChatItem = ({
               ))}
             </div>
           )}
-          <div className={`px-2 py-1 text-white max-w-full`}>
+          <div className={`px-2 py-1 text-gray-100 max-w-full`}>
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
@@ -56,7 +56,7 @@ const ChatItem = ({
         {lastSeenTimeOfReceiver &&
           message.senderId === user._id &&
           isSeen() &&
-          isLastMessage && <div className="text-xs">Seen</div>}
+          isLastMessage && <div className="text-xs text-gray-300">Seen</div>}
       </div>
     </li>
   );
