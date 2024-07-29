@@ -44,4 +44,6 @@ export const GroupChatEventEnum = Object.freeze({
   STOP_GROUP_TYPING_EVENT: "stopGroupTyping",
   // ? when a user sees a message
   GROUP_LAST_SEEN: "groupLastSeen",
+  // ? when group messages are deleted
+  GROUP_MESSAGE_DELETE: "groupMessageDelete",
 });

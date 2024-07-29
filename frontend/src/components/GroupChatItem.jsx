@@ -41,18 +41,20 @@ const GroupChatItem = ({
     <li
       data-id={message._id}
       key={message._id}
-      className={`flex ${
-        message.senderId === user._id ? "justify-end text-end" : "justify-start"
+      className={`flex flex-col ${
+        message.senderId === user._id ? "items-end" : "items-start"
       }`}
     >
       <div
-        className="max-w-full xl:max-w-[60%] cursor-pointer"
+        className="xl:max-w-[60%] cursor-pointer max-w-fit"
         onClick={toggleShowSeenBy}
       >
-        {senderUsername && <div className="text-xs">{senderUsername}</div>}
+        {senderUsername && (
+          <div className="text-xs text-gray-300">{senderUsername}</div>
+        )}
         <div
-          className={`inline-block max-w-full rounded-lg ${
-            message.senderId === user._id ? "bg-blue-500" : "bg-gray-400"
+          className={`inline-block rounded-lg ${
+            message.senderId === user._id ? "bg-blue-500" : "bg-gray-600"
           }`}
         >
           {message.attachments.length > 0 && (
@@ -61,7 +63,10 @@ const GroupChatItem = ({
                 <div
                   key={idx}
                   className="cursor-pointer max-w-[400px]"
-                  onClick={() => onImageClick(item.url)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageClick(item.url);
+                  }}
                 >
                   <img
                     className="w-full h-full"
@@ -72,16 +77,20 @@ const GroupChatItem = ({
               ))}
             </div>
           )}
-          <div className={`px-2 py-1 text-white max-w-full`}>
+          <div className={`px-2 py-1 text-gray-100 max-w-full`}>
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
-        {seenBy && message.senderId === user._id && (
-          <div className={`text-xs ${isLastMessage ? "block" : showSeenBy}`}>
-            {seenBy}
-          </div>
-        )}
       </div>
+      {seenBy && message.senderId === user._id && (
+        <div
+          className={`text-xs text-gray-300 ${
+            isLastMessage ? "block" : showSeenBy
+          }`}
+        >
+          {seenBy}
+        </div>
+      )}
     </li>
   );
 };

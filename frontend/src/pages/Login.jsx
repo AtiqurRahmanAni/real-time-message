@@ -35,9 +35,11 @@ const Login = () => {
         validationSchema={logInSchema}
         onSubmit={(values) => mutation.mutate(values)}
       >
-        <Form className="min-w-96 border border-gray-400 p-4 rounded-lg">
+        <Form className="min-w-96 border border-gray-600 p-4 rounded-lg">
           <div>
-            <h2 className="text-center text-2xl font-semibold mb-4">Log In</h2>
+            <h2 className="text-center text-2xl font-semibold mb-4 text-gray-200">
+              Log In
+            </h2>
           </div>
           <Input label="Username" type="text" name="username" />
           <Input

@@ -8,7 +8,7 @@ const SpinnerBlock = ({ width, height }) => {
       height={height || "4em"}
       viewBox="0 0 24 24"
     >
-      <rect width={10} height={10} x={2} y={1} fill="#616161" rx={1}>
+      <rect width={10} height={10} x={2} y={1} fill="#d1d5db" rx={1}>
         <animate
           id="svgSpinnersBlocksShuffle30"
           fill="freeze"
@@ -42,7 +42,7 @@ const SpinnerBlock = ({ width, height }) => {
           values="13;1"
         ></animate>
       </rect>
-      <rect width={10} height={10} x={1} y={13} fill="#616161" rx={1}>
+      <rect width={10} height={10} x={1} y={13} fill="#d1d5db" rx={1}>
         <animate
           id="svgSpinnersBlocksShuffle34"
           fill="freeze"
@@ -76,7 +76,7 @@ const SpinnerBlock = ({ width, height }) => {
           values="13;1"
         ></animate>
       </rect>
-      <rect width={10} height={10} x={13} y={13} fill="#616161" rx={1}>
+      <rect width={10} height={10} x={13} y={13} fill="#d1d5db" rx={1}>
         <animate
           id="svgSpinnersBlocksShuffle38"
           fill="freeze"
