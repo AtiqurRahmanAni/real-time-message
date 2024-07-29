@@ -2,12 +2,33 @@ import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { useState } from "react";
 import { IoSettingsSharp } from "react-icons/io5";
 import DeleteConfirmationDialog from "./DeleteConfirmationDialog";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "../utils/axiosInstance";
+import toast from "react-hot-toast";
+import { useAuthContext } from "../context/AuthContextProvider";
 
 const GroupSettingsDropDown = ({ groupId }) => {
+  const { logoutActions } = useAuthContext();
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const deleteMessages = () => {
-    console.log("Message deleted");
-  };
+
+  const groupMessageDeleteMutation = useMutation({
+    mutationFn: () =>
+      axiosInstance.delete(`group-conversation/group/${groupId}/messages`),
+    onSuccess: (response) => {
+      toast.success(response.data.message);
+      setIsDeleteModalOpen(false);
+    },
+    onError: (error) => {
+      // console.log(`Error: ${error}`);
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+      if (error?.response.status === 401) {
+        logoutActions();
+      }
+    },
+  });
   return (
     <>
       <div className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -40,8 +61,8 @@ const GroupSettingsDropDown = ({ groupId }) => {
       <DeleteConfirmationDialog
         isOpen={isDeleteModalOpen}
         setIsOpen={setIsDeleteModalOpen}
-        disableButtons={false}
-        deleteFn={deleteMessages}
+        disableButtons={groupMessageDeleteMutation.isPending}
+        deleteFn={() => groupMessageDeleteMutation.mutate()}
       />
     </>
   );

@@ -273,7 +273,11 @@ export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
   groupId = new mongoose.Types.ObjectId(groupId);
 
   const session = await mongoose.startSession();
-  session.startTransaction();
+  session.startTransaction({
+    readConcern: { level: "snapshot" },
+    writeConcern: { w: "majority" },
+    maxCommitTimeMS: 3 * 60 * 1000, // 3 mins
+  });
 
   try {
     const attachments = await GroupMessage.aggregate(
@@ -313,12 +317,22 @@ export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
       groupId,
     }).session(session);
 
-    const groupLastMessageUpdateResult = await Conversation.findOneAndUpdate(
-      { _id: groupId },
-      { lastMessageId: null }
-    ).session(session);
+    const group = await Conversation.findById(groupId.toString()).session(
+      session
+    );
+    group.lastMessageId = null;
+    const participants = group.participants;
+
+    await group.save({ session });
 
     await session.commitTransaction();
+
+    participants.forEach((participant) => {
+      req.app
+        .get("io")
+        .in(participant.participantId.toString())
+        .emit(GroupChatEventEnum.GROUP_MESSAGE_DELETE);
+    });
 
     return res.status(200).json({ message: "Messages deleted" });
   } catch (err) {

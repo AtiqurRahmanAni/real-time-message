@@ -39,7 +39,11 @@ const ImagePreviewModal = ({ imageUrl, isOpen, setIsOpen }) => {
             >
               <DialogPanel className="w-full max-w-md rounded-xl bg-gray-500 p-1 md:max-w-lg">
                 <div className="rounded-xl overflow-hidden">
-                  <img src={imageUrl} alt="preview image" />
+                  <img
+                    src={imageUrl}
+                    className="w-full h-full"
+                    alt="preview image"
+                  />
                 </div>
               </DialogPanel>
             </TransitionChild>

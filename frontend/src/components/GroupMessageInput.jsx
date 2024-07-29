@@ -89,7 +89,7 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
   const handleSendButtonClick = () => {
     const formData = new FormData();
     formData.set("senderId", user._id);
-    formData.set("content", messageContent);
+    formData.set("content", messageContent.trim());
 
     for (let i = 0; i < attachments.length; i++) {
       formData.append("attachments", attachments[i]);
