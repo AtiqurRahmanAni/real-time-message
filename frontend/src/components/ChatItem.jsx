@@ -21,13 +21,13 @@ const ChatItem = ({
     <li
       data-id={message._id}
       key={message._id}
-      className={`flex ${
-        message.senderId === user._id ? "justify-end text-end" : "justify-start"
+      className={`flex flex-col ${
+        message.senderId === user._id ? "items-end" : "items-start"
       }`}
     >
-      <div className="max-w-full xl:max-w-[60%] cursor-pointer">
+      <div className="max-w-fit xl:max-w-[60%] cursor-pointer">
         <div
-          className={`rounded-lg ${
+          className={`inline-block rounded-lg ${
             message.senderId === user._id ? "bg-blue-500" : "bg-gray-600"
           }`}
         >
@@ -52,12 +52,12 @@ const ChatItem = ({
             <p className="whitespace-pre-wrap break-words">{message.content}</p>
           </div>
         </div>
-        {/* if the message sender is me, then show "seen" if it is seen by the receiver */}
-        {lastSeenTimeOfReceiver &&
-          message.senderId === user._id &&
-          isSeen() &&
-          isLastMessage && <div className="text-xs text-gray-300">Seen</div>}
       </div>
+      {/* if the message sender is me, then show "seen" if it is seen by the receiver */}
+      {lastSeenTimeOfReceiver &&
+        message.senderId === user._id &&
+        isSeen() &&
+        isLastMessage && <div className="text-xs text-gray-300">Seen</div>}
     </li>
   );
 };

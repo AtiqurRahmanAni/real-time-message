@@ -29,6 +29,8 @@ export const ChatEventEnum = Object.freeze({
   MESSAGE_SEEN_EVENT: "messageSeen",
   // ? when a user sees a message
   LAST_SEEN_MESSAGE: "lastSeenMessage",
+  // ? when messages are deleted
+  MESSAGE_DELETE: "messageDelete",
 });
 
 export const GroupChatEventEnum = Object.freeze({

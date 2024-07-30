@@ -14,6 +14,7 @@ import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner";
+import { data } from "autoprefixer";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -52,6 +53,7 @@ const Chat = () => {
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
     socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
     socket.on(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
+    socket.on(ChatEventEnum.MESSAGE_DELETE, onDeleteMessage);
 
     // for group chat
     socket.on(
@@ -70,6 +72,7 @@ const Chat = () => {
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket.off(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
       socket.off(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
+      socket.off(ChatEventEnum.MESSAGE_DELETE, onDeleteMessage);
 
       // for group chat
       socket.off(
@@ -302,6 +305,19 @@ const Chat = () => {
     });
   };
 
+  const onDeleteMessage = (conversationId) => {
+    // delete all the messages
+    queryClient.setQueryData(["getMessages", conversationId], (oldData) => {
+      if (!oldData) return;
+      return {
+        ...oldData,
+        data: undefined,
+      };
+    });
+    queryClient.invalidateQueries(["getConversations"]);
+    setSelectedConversation(null);
+  };
+
   //------------- for group conversation --------------//
   const {
     data: groups,
@@ -452,7 +468,8 @@ const Chat = () => {
     if selected group is current group and messages are deleted,
     refetch messages again
     */
-    if (selectedGroup?._id === groupId) {
+    const currentSelectedGroup = selectedGroupRef.current;
+    if (currentSelectedGroup?._id === groupId) {
       queryClient.invalidateQueries(["getGroupMessages", groupId]);
     }
     queryClient.invalidateQueries(["getGroups"]);
