@@ -20,7 +20,6 @@ const GroupSettingsDropDown = ({ groupId }) => {
       setIsDeleteModalOpen(false);
     },
     onError: (error) => {
-      // console.log(`Error: ${error}`);
       toast.error(
         error.response ? error.response.data.message : "Something went wrong"
       );

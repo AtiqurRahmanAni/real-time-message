@@ -35,7 +35,7 @@ const GroupTabItem = ({ item }) => {
     if (
       socket &&
       newSelectedGroup?.lastMessage &&
-      newSelectedGroup?.lastMessage.senderId !== user._id &&
+      newSelectedGroup.unseenCount !== 0 &&
       newSelectedGroup._id !== selectedGroup?._id
     ) {
       // emit an event to the current user room to set unseen count

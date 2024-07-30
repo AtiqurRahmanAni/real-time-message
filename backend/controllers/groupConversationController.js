@@ -317,9 +317,7 @@ export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
       groupId,
     }).session(session);
 
-    const group = await Conversation.findById(groupId.toString()).session(
-      session
-    );
+    const group = await Conversation.findById(groupId).session(session);
     group.lastMessageId = null;
     const participants = group.participants;
 
@@ -331,7 +329,7 @@ export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
       req.app
         .get("io")
         .in(participant.participantId.toString())
-        .emit(GroupChatEventEnum.GROUP_MESSAGE_DELETE);
+        .emit(GroupChatEventEnum.GROUP_MESSAGE_DELETE, groupId.toString());
     });
 
     return res.status(200).json({ message: "Messages deleted" });

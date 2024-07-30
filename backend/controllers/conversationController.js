@@ -218,6 +218,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
 
     let conversation = null;
     conversation = await Conversation.findOne({
+      isGroupConversation: false,
       participants: {
         $all: [
           { $elemMatch: { participantId: senderId } },
@@ -291,5 +292,81 @@ export const sendMessage = asyncHandler(async (req, res) => {
     if (attachments) {
       deleteFiles(attachments.map((item) => item.path));
     }
+  }
+});
+
+export const deleteMessagesByConversationId = asyncHandler(async (req, res) => {
+  let { conversationId } = req.params;
+  conversationId = new mongoose.Types.ObjectId(conversationId);
+
+  const session = await mongoose.startSession();
+  session.startTransaction({
+    readConcern: { level: "snapshot" },
+    writeConcern: { w: "majority" },
+    maxCommitTimeMS: 3 * 60 * 100, // 3 mins
+  });
+
+  try {
+    const attachments = await Message.aggregate(
+      [
+        {
+          $match: { conversationId },
+        },
+        {
+          $unwind: "$attachments",
+        },
+        {
+          $project: {
+            _id: false,
+            publicId: "$attachments.publicId",
+          },
+        },
+      ],
+      { session }
+    );
+
+    const deleteAttachmentsResult = await Promise.all(
+      attachments.map((attachment) => {
+        return new Promise((resolve, reject) => {
+          cloudinary.uploader.destroy(attachment.publicId, (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result);
+            }
+          });
+        });
+      })
+    );
+
+    const messageDeleteResult = await Message.deleteMany({
+      conversationId,
+    }).session(session);
+
+    const conversation = await Conversation.findById(conversationId)
+      .select({ _id: false, "participants.participantId": true })
+      .session(session);
+
+    const conversationDeleteResult = await Conversation.findByIdAndDelete(
+      conversationId
+    ).session(session);
+
+    await session.commitTransaction();
+
+    const participants = conversation?.participants;
+    participants?.forEach((participant) => {
+      req.app
+        .get("io")
+        .in(participant.participantId.toString())
+        .emit(ChatEventEnum.MESSAGE_DELETE, conversationId.toString());
+    });
+
+    return res.status(200).json({ message: "Messages deleted" });
+  } catch (err) {
+    await session.abortTransaction();
+    console.error(`Error deleting messages: ${err}`);
+    throw new InternalServerError("Error deleting messages");
+  } finally {
+    session.endSession();
   }
 });

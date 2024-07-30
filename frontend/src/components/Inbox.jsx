@@ -38,7 +38,7 @@ const Inbox = () => {
     isLoading,
     error,
   } = useFetchData(
-    ["getMessages", selectedConversation._id],
+    ["getMessages", selectedConversation?.conversation?._id],
     `conversation/${selectedConversation?.conversation?._id}/messages`,
     {
       enabled: !!selectedConversation?.conversation,

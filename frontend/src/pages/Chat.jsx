@@ -14,6 +14,7 @@ import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner";
+import { data } from "autoprefixer";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -47,11 +48,11 @@ const Chat = () => {
     if (!socket) return;
 
     socket.on(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
-    socket.on(ChatEventEnum.USER_ONLINE, handleUserOnline);
-    socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
+    socket.on(ChatEventEnum.USER_ONLINE_STATUS, handleUserOnlineStatus);
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
     socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
     socket.on(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
+    socket.on(ChatEventEnum.MESSAGE_DELETE, onDeleteMessage);
 
     // for group chat
     socket.on(
@@ -65,11 +66,11 @@ const Chat = () => {
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
-      socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
-      socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
+      socket.off(ChatEventEnum.USER_ONLINE_STATUS, handleUserOnlineStatus);
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket.off(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
       socket.off(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
+      socket.off(ChatEventEnum.MESSAGE_DELETE, onDeleteMessage);
 
       // for group chat
       socket.off(
@@ -142,12 +143,7 @@ const Chat = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  const handleUserOnline = (onlineUsers) => {
-    // onlineUsers is an array
-    setOnlineUsers(onlineUsers);
-  };
-
-  const handleUserOffline = (onlineUsers) => {
+  const handleUserOnlineStatus = (onlineUsers) => {
     // onlineUsers is an array
     setOnlineUsers(onlineUsers);
   };
@@ -247,17 +243,14 @@ const Chat = () => {
       currentSelectedConversation?._id === message.senderId ||
       currentSelectedConversation?._id === message.receiverId
     ) {
-      queryClient.setQueryData(
-        ["getMessages", currentSelectedConversation._id],
-        (oldData) => {
-          if (!oldData) return;
+      queryClient.setQueryData(["getMessages", conversation._id], (oldData) => {
+        if (!oldData) return;
 
-          return {
-            ...oldData,
-            data: [...oldData.data, message],
-          };
-        }
-      );
+        return {
+          ...oldData,
+          data: [...oldData.data, message],
+        };
+      });
     }
 
     // update the lastSeen of the receiver if he is in someones inbox
@@ -300,6 +293,16 @@ const Chat = () => {
         data: { lastSeenTime },
       };
     });
+  };
+
+  const onDeleteMessage = (conversationId) => {
+    // delete all the messages
+    queryClient.setQueryData(["getMessages", conversationId], (oldData) => {
+      if (!oldData) return;
+      return undefined;
+    });
+    queryClient.invalidateQueries(["getConversations"]);
+    setSelectedConversation(null);
   };
 
   //------------- for group conversation --------------//
@@ -452,7 +455,8 @@ const Chat = () => {
     if selected group is current group and messages are deleted,
     refetch messages again
     */
-    if (selectedGroup?._id === groupId) {
+    const currentSelectedGroup = selectedGroupRef.current;
+    if (currentSelectedGroup?._id === groupId) {
       queryClient.invalidateQueries(["getGroupMessages", groupId]);
     }
     queryClient.invalidateQueries(["getGroups"]);
