@@ -42,22 +42,17 @@ export const formatTimeStamp = (timestamp) => {
   }
 };
 
-// export const formatGroupMessageViewers = (dataToBeFormatted, userList) => {
-//   let processedData = [];
-//   for (entry of dataToBeFormatted) {
-//     const idx = processedData.findIndex(
-//       (pd) => pd?.lastMessageId === entry.lastMessageId
-//     );
-
-//     if (idx === -1) {
-//       processedData.push({
-//         lastMessageId: entry.lastMessageId,
-//         receiverIds: [entry.receiverId],
-//       });
-//     } else {
-//       processedData[idx].receiverIds.push(entry.receiverId);
-//     }
-//   }
-
-//   return processedData;
-// };
+export const playNotification = (sound) => {
+  try {
+    if (typeof Audio !== "undefined") {
+      const audio = new Audio(sound);
+      audio.play().catch((error) => {
+        console.error("Error playing sound:", error);
+      });
+    } else {
+      console.error("Audio API is not supported in this browser.");
+    }
+  } catch (err) {
+    console.error("Error playing sound:", error);
+  }
+};
