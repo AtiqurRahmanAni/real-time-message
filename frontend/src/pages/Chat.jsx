@@ -48,8 +48,7 @@ const Chat = () => {
     if (!socket) return;
 
     socket.on(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
-    socket.on(ChatEventEnum.USER_ONLINE, handleUserOnline);
-    socket.on(ChatEventEnum.USER_OFFLINE, handleUserOffline);
+    socket.on(ChatEventEnum.USER_ONLINE_STATUS, handleUserOnlineStatus);
     socket.on(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
     socket.on(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
     socket.on(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
@@ -67,8 +66,7 @@ const Chat = () => {
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
-      socket.off(ChatEventEnum.USER_ONLINE, handleUserOnline);
-      socket.off(ChatEventEnum.USER_OFFLINE, handleUserOffline);
+      socket.off(ChatEventEnum.USER_ONLINE_STATUS, handleUserOnlineStatus);
       socket.off(ChatEventEnum.MESSAGE_RECEIVED_EVENT, onMessageReceive);
       socket.off(ChatEventEnum.MESSAGE_SEEN_EVENT, onMessageSeen);
       socket.off(ChatEventEnum.LAST_SEEN_MESSAGE, handleLastSeen);
@@ -145,12 +143,7 @@ const Chat = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-  const handleUserOnline = (onlineUsers) => {
-    // onlineUsers is an array
-    setOnlineUsers(onlineUsers);
-  };
-
-  const handleUserOffline = (onlineUsers) => {
+  const handleUserOnlineStatus = (onlineUsers) => {
     // onlineUsers is an array
     setOnlineUsers(onlineUsers);
   };
@@ -250,17 +243,14 @@ const Chat = () => {
       currentSelectedConversation?._id === message.senderId ||
       currentSelectedConversation?._id === message.receiverId
     ) {
-      queryClient.setQueryData(
-        ["getMessages", currentSelectedConversation._id],
-        (oldData) => {
-          if (!oldData) return;
+      queryClient.setQueryData(["getMessages", conversation._id], (oldData) => {
+        if (!oldData) return;
 
-          return {
-            ...oldData,
-            data: [...oldData.data, message],
-          };
-        }
-      );
+        return {
+          ...oldData,
+          data: [...oldData.data, message],
+        };
+      });
     }
 
     // update the lastSeen of the receiver if he is in someones inbox
@@ -309,10 +299,7 @@ const Chat = () => {
     // delete all the messages
     queryClient.setQueryData(["getMessages", conversationId], (oldData) => {
       if (!oldData) return;
-      return {
-        ...oldData,
-        data: undefined,
-      };
+      return undefined;
     });
     queryClient.invalidateQueries(["getConversations"]);
     setSelectedConversation(null);

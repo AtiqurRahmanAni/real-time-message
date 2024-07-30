@@ -358,7 +358,7 @@ export const deleteMessagesByConversationId = asyncHandler(async (req, res) => {
       req.app
         .get("io")
         .in(participant.participantId.toString())
-        .emit(ChatEventEnum.MESSAGE_DELETE);
+        .emit(ChatEventEnum.MESSAGE_DELETE, conversationId.toString());
     });
 
     return res.status(200).json({ message: "Messages deleted" });

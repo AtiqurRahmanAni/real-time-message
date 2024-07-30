@@ -19,10 +19,8 @@ export const ChatEventEnum = Object.freeze({
   TYPING_EVENT: "typing",
   // ? when a new user signup
   NEW_USER_CREATE_EVENT: "newUserCreate",
-  // ? when a new user comes online
-  USER_ONLINE: "userOnline",
-  // ? when a new user goes offline
-  USER_OFFLINE: "userOffline",
+  // ? when a new user comes online or goes offline
+  USER_ONLINE_STATUS: "userOnlineStatus",
   // ? for updating sidebar information (e.g: lastMessage, lastMessageTimeStamp)
   CONVERSATION_UPDATE_EVENT: "conversationUpdate",
   // ? when a user click on an inbox

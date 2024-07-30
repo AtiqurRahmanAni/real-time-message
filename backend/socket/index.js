@@ -10,7 +10,7 @@ export const initSocket = (io) => {
     if (userId) {
       console.log(`User ${userId} just joined`);
       onlineUsers.add(userId);
-      io.emit(ChatEventEnum.USER_ONLINE, [...onlineUsers]); // spreading to convert set to array
+      io.emit(ChatEventEnum.USER_ONLINE_STATUS, [...onlineUsers]); // spreading to convert set to array
     }
 
     socket.on(
@@ -86,7 +86,7 @@ export const initSocket = (io) => {
       if (userId) {
         socket.leave(userId);
         onlineUsers.delete(userId);
-        io.emit(ChatEventEnum.USER_OFFLINE, [...onlineUsers]); // spreading to convert set to array
+        io.emit(ChatEventEnum.USER_ONLINE_STATUS, [...onlineUsers]); // spreading to convert set to array
       }
     });
   });
