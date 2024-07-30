@@ -14,8 +14,8 @@ import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner";
-import messageIncomingSound from "../assets/message_notification.mp3";
-import { playNotification } from "../utils";
+import { playNotification, generateRandomNumber } from "../utils";
+import { notificationSounds } from "../constants";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -170,7 +170,8 @@ const Chat = () => {
       },
     */
     if (message.receiverId === user._id) {
-      playNotification(messageIncomingSound);
+      const soundNo = generateRandomNumber(notificationSounds.length);
+      playNotification(notificationSounds[soundNo]);
     }
 
     if (document.visibilityState === "hidden") {
@@ -365,7 +366,8 @@ const Chat = () => {
     const currentSelectedGroup = selectedGroupRef.current;
 
     if (message.senderId !== user._id) {
-      playNotification(messageIncomingSound);
+      const soundNo = generateRandomNumber(notificationSounds.length);
+      playNotification(notificationSounds[soundNo]);
     }
 
     if (document.visibilityState === "hidden") {

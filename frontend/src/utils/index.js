@@ -56,3 +56,7 @@ export const playNotification = (sound) => {
     console.error("Error playing sound:", error);
   }
 };
+
+export const generateRandomNumber = (limit) => {
+  return Math.floor(Math.random() * (limit + 1));
+};
