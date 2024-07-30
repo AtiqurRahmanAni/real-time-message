@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useAuthContext } from "../context/AuthContextProvider";
 import { useQueryClient } from "@tanstack/react-query";
+import RenderLink from "../components/RenderLink";
+import Linkify from "linkify-react";
 
 const GroupChatItem = ({
   message,
@@ -78,7 +80,13 @@ const GroupChatItem = ({
             </div>
           )}
           <div className={`px-2 py-1 text-gray-100 max-w-full`}>
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <Linkify
+              as="p"
+              options={{ render: RenderLink }}
+              className="whitespace-pre-wrap break-words"
+            >
+              {message.content}
+            </Linkify>
           </div>
         </div>
       </div>

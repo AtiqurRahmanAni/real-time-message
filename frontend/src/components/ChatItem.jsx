@@ -1,5 +1,7 @@
 import React from "react";
 import { useAuthContext } from "../context/AuthContextProvider";
+import Linkify from "linkify-react";
+import RenderLink from "./RenderLink";
 
 const ChatItem = ({
   message,
@@ -49,7 +51,13 @@ const ChatItem = ({
             </div>
           )}
           <div className={`px-2 py-1 text-gray-100 max-w-full`}>
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <Linkify
+              as="p"
+              options={{ render: RenderLink }}
+              className="whitespace-pre-wrap break-words"
+            >
+              {message.content}
+            </Linkify>
           </div>
         </div>
       </div>
