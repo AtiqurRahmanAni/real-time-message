@@ -14,7 +14,7 @@ import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner";
-import { data } from "autoprefixer";
+import messageNotification from "../assets/message_notification.mp3";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -168,6 +168,14 @@ const Chat = () => {
           "createdAt": ""
       },
     */
+
+    // play sound
+    if (message.receiverId === user._id) {
+      const audio = new Audio(messageNotification);
+      audio.play().catch((error) => {
+        console.error("Error playing sound:", error);
+      });
+    }
 
     if (document.visibilityState === "hidden") {
       setUnreadCount((prev) => prev + 1);
@@ -359,6 +367,14 @@ const Chat = () => {
 
   const onGroupMessageReceive = ({ group, message }) => {
     const currentSelectedGroup = selectedGroupRef.current;
+
+    // play sound
+    if (message.senderId !== user._id) {
+      const audio = new Audio(messageNotification);
+      audio.play().catch((error) => {
+        console.error("Error playing sound:", error);
+      });
+    }
 
     if (document.visibilityState === "hidden") {
       setUnreadCount((prev) => prev + 1);

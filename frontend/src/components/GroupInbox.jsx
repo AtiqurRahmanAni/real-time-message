@@ -14,7 +14,7 @@ const GroupInbox = () => {
   const selectedGroup = groupStore((state) => state.selectedGroup);
   const [isOpen, setIsOpen] = useState(false);
   const messagesEndRef = useRef(null);
-  const { user } = useAuthContext();
+  const { user, logoutActions } = useAuthContext();
   const selectedImageUrl = useRef(null);
 
   const queryClient = useQueryClient();
