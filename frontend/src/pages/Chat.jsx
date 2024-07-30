@@ -14,7 +14,7 @@ import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner";
-import messageNotification from "../assets/message_notification.mp3";
+import messageIncomingSound from "../assets/message_notification.mp3";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -168,13 +168,8 @@ const Chat = () => {
           "createdAt": ""
       },
     */
-
-    // play sound
     if (message.receiverId === user._id) {
-      const audio = new Audio(messageNotification);
-      audio.play().catch((error) => {
-        console.error("Error playing sound:", error);
-      });
+      playNotification(messageIncomingSound);
     }
 
     if (document.visibilityState === "hidden") {
@@ -368,12 +363,8 @@ const Chat = () => {
   const onGroupMessageReceive = ({ group, message }) => {
     const currentSelectedGroup = selectedGroupRef.current;
 
-    // play sound
     if (message.senderId !== user._id) {
-      const audio = new Audio(messageNotification);
-      audio.play().catch((error) => {
-        console.error("Error playing sound:", error);
-      });
+      playNotification(messageIncomingSound);
     }
 
     if (document.visibilityState === "hidden") {
@@ -476,6 +467,21 @@ const Chat = () => {
       queryClient.invalidateQueries(["getGroupMessages", groupId]);
     }
     queryClient.invalidateQueries(["getGroups"]);
+  };
+
+  const playNotification = (sound) => {
+    try {
+      if (typeof Audio !== "undefined") {
+        const audio = new Audio(sound);
+        audio.play().catch((error) => {
+          console.error("Error playing sound:", error);
+        });
+      } else {
+        console.error("Audio API is not supported in this browser.");
+      }
+    } catch (err) {
+      console.error("Error playing sound:", error);
+    }
   };
 
   // for updating the seen message in a group

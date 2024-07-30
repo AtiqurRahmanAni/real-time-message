@@ -51,7 +51,7 @@ const DeleteConfirmationDialog = ({
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <DialogPanel className="py-8 w-full max-w-sm rounded-xl bg-gray-500 p-1">
+              <DialogPanel className="py-4 w-full max-w-xs rounded-xl bg-gray-500">
                 <DialogTitle
                   as="div"
                   className="text-red-600 flex justify-center"
