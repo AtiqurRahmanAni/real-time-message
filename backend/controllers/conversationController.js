@@ -135,15 +135,27 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
 
 export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
+  let { pageSize, pageNo } = req.query;
+
+  pageNo = parseInt(pageNo, 10);
+  pageSize = parseInt(pageSize, 10);
+
+  const totalMessages = await Message.countDocuments();
+  const totalPages = Math.ceil(totalMessages / pageSize);
 
   const messages = await Message.find({ conversationId })
     .sort({ createdAt: -1 })
-    .limit(20)
+    .skip((pageNo - 1) * pageSize)
+    .limit(pageSize)
     .select({
       __v: false,
     });
 
-  return res.status(200).send(messages.reverse());
+  const response = {
+    messages,
+    nextPage: pageNo + 1 <= totalPages ? pageNo + 1 : null,
+  };
+  return res.status(200).send(response);
 });
 
 export const getLastSeenByUserId = asyncHandler(async (req, res) => {
