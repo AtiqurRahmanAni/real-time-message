@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import MessageSendButton from "./MessageSendButton";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import AttachmentButton from "./AttachmentButton.jsx";
-import CloseButton from "./CloseButton.jsx";
 import toast from "react-hot-toast";
+import PreviewAttachments from "./PreviewAttachments.jsx";
+import { handleDrop, handlePaste } from "../utils/index.js";
 
 const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
   const [messageContent, setMessageContent] = useState("");
@@ -82,9 +83,27 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
     }
   };
 
-  const onRemoveAttachment = (removeIdx) => {
-    setAttachments((prev) => prev.filter((_, idx) => idx !== removeIdx));
+  const onPaste = (e) => {
+    const files = handlePaste(e);
+    if (files) {
+      setAttachments(files);
+    }
   };
+
+  const onDrop = (e) => {
+    const files = handleDrop(e);
+    if (files) {
+      setAttachments(files);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const onRemoveAttachment = useCallback((removeIdx) => {
+    setAttachments((prev) => prev.filter((_, idx) => idx !== removeIdx));
+  }, []);
 
   const handleSendButtonClick = () => {
     const formData = new FormData();
@@ -118,26 +137,18 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
       <div className="bg-gray-600 rounded-xl p-2">
         {attachments.length > 0 && (
           <div className="flex gap-2.5 flex-wrap mb-2">
-            {attachments.map((item, idx) => (
-              <div key={idx}>
-                <div className="relative">
-                  <CloseButton
-                    className="absolute -right-[10px] -top-[10px]"
-                    onClick={() => onRemoveAttachment(idx)}
-                  />
-                </div>
-                <div className="w-24 h-24 border border-gray-300 rounded-lg overflow-hidden">
-                  <img
-                    className="w-full h-full object-fill"
-                    src={URL.createObjectURL(item)}
-                    alt="attachment"
-                  />
-                </div>
-              </div>
-            ))}
+            <PreviewAttachments
+              attachments={attachments}
+              onRemoveAttachment={onRemoveAttachment}
+            />
           </div>
         )}
-        <div className="relative">
+        <div
+          className="relative"
+          onPaste={onPaste}
+          onDrop={onDrop}
+          onDragOver={handleDragOver}
+        >
           <div className="absolute top-1/2 -translate-y-1/2">
             <AttachmentButton
               onClick={() => attachmentInputRef?.current.click()}

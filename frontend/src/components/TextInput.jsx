@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import MessageSendButton from "./MessageSendButton";
 import socketStore from "../stores/socketStore";
 import { ChatEventEnum } from "../constants/index.js";
 import conversationStore from "../stores/conversationStore.js";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import AttachmentButton from "./AttachmentButton.jsx";
-import CloseButton from "./CloseButton.jsx";
-import toast from "react-hot-toast";
+import { handleDrop, handlePaste, onAttachmentSelect } from "../utils/index.js";
+import PreviewAttachments from "./PreviewAttachments.jsx";
 
 const TextInput = ({ onSendButtonClick, disabled = false }) => {
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
@@ -70,25 +70,34 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
     });
   };
 
-  const onAttachmentSelect = (e) => {
-    const attachments = e.target.files;
-
-    if (attachments.length > 6) {
-      toast.error("You can not add more than 6 attachments");
-      return;
-    }
-    if (attachments.length > 0) {
-      let temp = [];
-      for (let i = 0; i < attachments.length; i++) {
-        temp.push(attachments[i]);
-      }
-      setAttachments(temp);
+  const handleAttachmentChange = (e) => {
+    const files = onAttachmentSelect(e);
+    if (files) {
+      setAttachments(files);
     }
   };
 
-  const onRemoveAttachment = (removeIdx) => {
+  const onPaste = (e) => {
+    const files = handlePaste(e);
+    if (files) {
+      setAttachments(files);
+    }
+  };
+
+  const onDrop = (e) => {
+    const files = handleDrop(e);
+    if (files) {
+      setAttachments(files);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const onRemoveAttachment = useCallback((removeIdx) => {
     setAttachments((prev) => prev.filter((_, idx) => idx !== removeIdx));
-  };
+  }, []);
 
   const handleSendButtonClick = () => {
     const formData = new FormData();
@@ -122,27 +131,17 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
       )}
       <div className="bg-gray-600 rounded-xl p-2">
         {attachments.length > 0 && (
-          <div className="flex gap-2.5 flex-wrap mb-2">
-            {attachments.map((item, idx) => (
-              <div key={idx}>
-                <div className="relative">
-                  <CloseButton
-                    className="absolute -right-[10px] -top-[10px]"
-                    onClick={() => onRemoveAttachment(idx)}
-                  />
-                </div>
-                <div className="w-24 h-24 border border-gray-300 rounded-lg overflow-hidden">
-                  <img
-                    className="w-full h-full object-fill"
-                    src={URL.createObjectURL(item)}
-                    alt="attachment"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <PreviewAttachments
+            attachments={attachments}
+            onRemoveAttachment={onRemoveAttachment}
+          />
         )}
-        <div className="relative">
+        <div
+          className="relative"
+          onPaste={onPaste}
+          onDragOver={handleDragOver}
+          onDrop={onDrop}
+        >
           <div className="absolute top-1/2 -translate-y-1/2">
             <AttachmentButton
               onClick={() => attachmentInputRef?.current.click()}
@@ -153,7 +152,7 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
               type="file"
               multiple={true}
               accept="image/jpeg,image/png,image/jpg"
-              onChange={onAttachmentSelect}
+              onChange={handleAttachmentChange}
             />
           </div>
 

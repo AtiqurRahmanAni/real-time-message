@@ -1,3 +1,7 @@
+import toast from "react-hot-toast";
+
+const MAX_ATTACHMENT_SIZE = 2 * 1024 * 1024;
+
 export const formatTimeStamp = (timestamp) => {
   const prevDate = new Date(timestamp);
   const currDate = new Date();
@@ -53,10 +57,69 @@ export const playNotification = (sound) => {
       console.error("Audio API is not supported in this browser.");
     }
   } catch (err) {
-    console.error("Error playing sound:", error);
+    console.error("Error playing sound:", err);
   }
 };
 
 export const generateRandomNumber = (limit) => {
   return Math.floor(Math.random() * (limit + 1));
+};
+
+export const onAttachmentSelect = (e) => {
+  const attachments = e.target.files;
+
+  if (attachments.length > 6) {
+    toast.error("You can not add more than 6 attachments");
+    return null;
+  }
+  if (attachments.length > 0) {
+    let temp = [];
+    for (const attachment of attachments) {
+      if (attachment.size <= MAX_ATTACHMENT_SIZE) {
+        temp.push(attachment);
+      }
+    }
+    return temp;
+  }
+  return null;
+};
+
+export const handlePaste = (e) => {
+  const attachments = e.clipboardData.items;
+  let temp = [];
+  for (const attachment of attachments) {
+    if (attachment.kind === "file") {
+      const file = attachment.getAsFile();
+      if (file.size <= MAX_ATTACHMENT_SIZE && file.type.startsWith("image/")) {
+        temp.push(file);
+      }
+    }
+  }
+
+  if (temp.length > 6) {
+    toast.error("You can not add more than 6 attachments");
+    return null;
+  }
+
+  return temp;
+};
+
+export const handleDrop = (e) => {
+  e.preventDefault();
+  const attachments = e.dataTransfer.files;
+  let temp = [];
+  for (const attachment of attachments) {
+    if (
+      attachment.size <= MAX_ATTACHMENT_SIZE &&
+      attachment.type.startsWith("image/")
+    ) {
+      temp.push(attachment);
+    }
+  }
+
+  if (temp.length > 6) {
+    toast.error("You can not add more than 6 attachments");
+    return null;
+  }
+  return temp;
 };
