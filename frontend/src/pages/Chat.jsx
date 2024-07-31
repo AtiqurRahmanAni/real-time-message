@@ -14,8 +14,8 @@ import groupStore from "../stores/groupStore";
 import GroupInbox from "../components/GroupInbox";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner";
-import { playNotification, generateRandomNumber } from "../utils";
-import { notificationSounds } from "../constants";
+import { playNotification } from "../utils";
+import messageSound from "../assets/message_notification.mp3";
 
 const Chat = () => {
   const selectedConversation = conversationStore(
@@ -129,7 +129,7 @@ const Chat = () => {
     if (unreadCount > 0) {
       document.title = `(${unreadCount}) New messages`;
     } else {
-      document.title = `Chat app`;
+      document.title = `Connectly`;
     }
   }, [unreadCount]);
 
@@ -170,8 +170,9 @@ const Chat = () => {
       },
     */
     if (message.receiverId === user._id) {
-      const soundNo = generateRandomNumber(notificationSounds.length);
-      playNotification(notificationSounds[soundNo]);
+      // const soundNo = generateRandomNumber(notificationSounds.length);
+      // playNotification(notificationSounds[soundNo]);
+      playNotification(messageSound);
     }
 
     if (document.visibilityState === "hidden") {
@@ -366,8 +367,9 @@ const Chat = () => {
     const currentSelectedGroup = selectedGroupRef.current;
 
     if (message.senderId !== user._id) {
-      const soundNo = generateRandomNumber(notificationSounds.length);
-      playNotification(notificationSounds[soundNo]);
+      // const soundNo = generateRandomNumber(notificationSounds.length);
+      // playNotification(notificationSounds[soundNo]);
+      playNotification(messageSound);
     }
 
     if (document.visibilityState === "hidden") {

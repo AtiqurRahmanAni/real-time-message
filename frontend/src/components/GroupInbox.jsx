@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import useFetchData from "../hooks/useFetchData";
 import groupStore from "../stores/groupStore";
 import SpinnerBlock from "../assets/Spinner";
@@ -82,6 +82,10 @@ const GroupInbox = () => {
     return cachedUsers?.find((user) => user._id === senderId)?.username;
   };
 
+  const sendMessage = useCallback((formData) => {
+    messageSendMutation.mutate(formData);
+  }, []);
+
   return (
     <>
       <div className="relative flex-1 max-w-[calc(100vw-25rem)] min-h-[calc(100dvh-4.45rem)] ml-4">
@@ -111,9 +115,7 @@ const GroupInbox = () => {
         <div className="absolute bottom-0 w-full">
           <GroupMessageInput
             disabled={isGroupMessagesLoading || isLastSeenListLoading}
-            onSendButtonClick={(formData) =>
-              messageSendMutation.mutate(formData)
-            }
+            onSendButtonClick={sendMessage}
           />
         </div>
       </div>
@@ -126,4 +128,4 @@ const GroupInbox = () => {
   );
 };
 
-export default GroupInbox;
+export default React.memo(GroupInbox);

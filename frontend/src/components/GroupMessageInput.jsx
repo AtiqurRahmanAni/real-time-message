@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import MessageSendButton from "./MessageSendButton";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import AttachmentButton from "./AttachmentButton.jsx";
@@ -184,4 +184,4 @@ const GroupMessageInput = ({ onSendButtonClick, disabled = false }) => {
   );
 };
 
-export default GroupMessageInput;
+export default React.memo(GroupMessageInput);

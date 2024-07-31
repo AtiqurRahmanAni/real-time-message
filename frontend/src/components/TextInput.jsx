@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import MessageSendButton from "./MessageSendButton";
 import socketStore from "../stores/socketStore";
 import { ChatEventEnum } from "../constants/index.js";
@@ -177,4 +177,4 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
   );
 };
 
-export default TextInput;
+export default React.memo(TextInput);

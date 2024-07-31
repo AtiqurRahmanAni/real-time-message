@@ -3,7 +3,7 @@ import { useAuthContext } from "../context/AuthContextProvider.jsx";
 import { useMutation } from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance.js";
 import TextInput from "./TextInput.jsx";
-import { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import SpinnerBlock from "../assets/Spinner.jsx";
 import ImagePreviewModal from "./ImagePreviewDialog.jsx";
@@ -84,6 +84,10 @@ const Inbox = () => {
     setIsOpen(true);
   };
 
+  const sendMessage = useCallback((formData) => {
+    messageSendMutation.mutate(formData);
+  }, []);
+
   return (
     <>
       <div className="relative flex-1 max-w-[calc(100vw-25rem)] min-h-[calc(100dvh-4.45rem)] ml-4">
@@ -108,9 +112,7 @@ const Inbox = () => {
         <div className="absolute bottom-0 w-full">
           <TextInput
             disabled={messageSendMutation.isPending || isLoading}
-            onSendButtonClick={(formData) =>
-              messageSendMutation.mutate(formData)
-            }
+            onSendButtonClick={sendMessage}
           />
         </div>
       </div>
@@ -123,4 +125,4 @@ const Inbox = () => {
   );
 };
 
-export default Inbox;
+export default React.memo(Inbox);
