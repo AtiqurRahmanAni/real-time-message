@@ -84,20 +84,19 @@ const Inbox = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (inView) {
-      if (
-        inView &&
-        selectedConversation?.conversation &&
-        !isFetchingNextPage &&
-        !isInitialLoad.current
-      ) {
-        fetchNextPage();
-      }
+    if (
+      inView &&
+      selectedConversation?.conversation &&
+      !isFetchingNextPage &&
+      !isInitialLoad.current
+    ) {
+      fetchNextPage();
     }
   }, [fetchNextPage, inView]);
 
   useEffect(() => {
     return () => {
+      // keep only page 0
       queryClient.setQueryData(
         ["getMessages", selectedConversation?.conversation?._id],
         (oldData) => {

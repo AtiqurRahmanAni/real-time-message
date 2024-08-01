@@ -135,7 +135,7 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
 
 export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
-  let { pageSize, pageNo } = req.query;
+  let { pageSize = 20, pageNo = 1 } = req.query;
 
   pageNo = parseInt(pageNo, 10);
   pageSize = parseInt(pageSize, 10);

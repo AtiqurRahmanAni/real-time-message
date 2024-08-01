@@ -2,13 +2,18 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import useFetchData from "../hooks/useFetchData";
 import groupStore from "../stores/groupStore";
 import SpinnerBlock from "../assets/Spinner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useAuthContext } from "../context/AuthContextProvider";
 import GroupMessageInput from "./GroupMessageInput";
 import axiosInstance from "../utils/axiosInstance";
 import GroupChatItem from "./GroupChatItem";
 import toast from "react-hot-toast";
 import ImagePreviewModal from "./ImagePreviewDialog";
+import { useInView } from "react-intersection-observer";
 
 const GroupInbox = () => {
   const selectedGroup = groupStore((state) => state.selectedGroup);
@@ -16,22 +21,33 @@ const GroupInbox = () => {
   const messagesEndRef = useRef(null);
   const { user, logoutActions } = useAuthContext();
   const selectedImageUrl = useRef(null);
-
   const queryClient = useQueryClient();
+  const { ref, inView } = useInView();
+  const isInitialLoad = useRef(true);
 
   const cachedUsers = queryClient.getQueryData(["getConversations"])?.data;
 
   const {
-    data: groupMessages,
+    data: messageResponse,
+    fetchNextPage,
+    isFetchingNextPage,
     isLoading: isGroupMessagesLoading,
-    error: groupMessagesError,
-  } = useFetchData(
-    ["getGroupMessages", selectedGroup?._id],
-    `group-conversation/group/${selectedGroup?._id}/message`,
-    {
-      enabled: !!selectedGroup?._id,
-    }
-  );
+  } = useInfiniteQuery({
+    queryKey: ["getGroupMessages", selectedGroup?._id],
+    queryFn: ({ pageParam }) =>
+      axiosInstance.get(
+        `group-conversation/group/${selectedGroup?._id}/message?pageNo=${pageParam}&pageSize=20`
+      ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      return lastPage?.data.nextPage;
+    },
+    enabled: !!selectedGroup?._id,
+  });
+
+  const groupMessages = messageResponse
+    ? messageResponse.pages.flatMap((d) => d.data.messages)
+    : [];
 
   const {
     data: lastSeenList,
@@ -41,7 +57,7 @@ const GroupInbox = () => {
     ["lastSeenOfParticipants", selectedGroup?._id],
     `group-conversation/group/${selectedGroup._id}/participants-last-seen`,
     {
-      enabled: !!(groupMessages?.data?.length > 0 && selectedGroup?._id),
+      enabled: !!(groupMessages.length > 0 && selectedGroup?._id),
     }
   );
 
@@ -67,11 +83,41 @@ const GroupInbox = () => {
   });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "auto",
-      block: "end",
-    });
-  }, [groupMessages, lastSeenList]);
+    if (isInitialLoad.current && groupMessages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "auto",
+      });
+      isInitialLoad.current = false;
+    }
+  }, [groupMessages]);
+
+  useEffect(() => {
+    if (
+      inView &&
+      selectedGroup?._id &&
+      !isFetchingNextPage &&
+      !isInitialLoad.current
+    ) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, inView]);
+
+  useEffect(() => {
+    return () => {
+      // keep only page 0
+      queryClient.setQueryData(
+        ["getGroupMessages", selectedGroup?._id],
+        (oldData) => {
+          if (!oldData) return;
+
+          return {
+            pages: oldData.pages.slice(0, 1),
+            pageParams: oldData.pageParams.slice(0, 1),
+          };
+        }
+      );
+    };
+  }, [selectedGroup?._id]);
 
   const onImageClick = (imageUrl) => {
     selectedImageUrl.current = imageUrl;
@@ -94,10 +140,11 @@ const GroupInbox = () => {
             <SpinnerBlock />
           </div>
         ) : (
-          <ul className="space-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
-            {groupMessages?.data?.map((message, idx) => (
+          <ul className="flex flex-col-reverse gap-y-2 mt-4 h-[calc(100dvh-10rem)] overflow-y-scroll pb-2 px-10 scrollbar-custom">
+            <div ref={messagesEndRef} />
+            {groupMessages?.map((message, idx) => (
               <GroupChatItem
-                key={message._id}
+                key={message._id + idx}
                 message={message}
                 onImageClick={onImageClick}
                 senderUsername={
@@ -105,11 +152,13 @@ const GroupInbox = () => {
                     ? getSenderUsername(message.senderId)
                     : null
                 }
-                isLastMessage={idx === groupMessages.data.length - 1}
+                isLastMessage={idx === 0}
                 lastSeenTimeOfParticipants={lastSeenList?.data}
               />
             ))}
-            <div ref={messagesEndRef} />
+            <div ref={ref} className="opacity-0">
+              .
+            </div>
           </ul>
         )}
         <div className="absolute bottom-0 w-full">
