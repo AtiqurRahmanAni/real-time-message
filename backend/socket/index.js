@@ -1,16 +1,27 @@
 import { ChatEventEnum, GroupChatEventEnum } from "../constants/index.js";
 
-const onlineUsers = new Set();
+const getOnlineUsers = (rooms) => {
+  const onlineUsers = [];
+  rooms.forEach((value, key) => {
+    if (value.size > 0) {
+      onlineUsers.push(key);
+    }
+  });
+
+  return onlineUsers;
+};
 
 export const initSocket = (io) => {
   return io.on("connection", (socket) => {
     const userId = socket.handshake.query?.userId || "";
 
+    socket.leave(socket.id);
     socket.join(userId);
+
     if (userId) {
       console.log(`User ${userId} just joined`);
-      onlineUsers.add(userId);
-      io.emit(ChatEventEnum.USER_ONLINE_STATUS, [...onlineUsers]); // spreading to convert set to array
+      const onlineUsers = getOnlineUsers(io.sockets.adapter.rooms);
+      io.emit(ChatEventEnum.USER_ONLINE_STATUS, onlineUsers); // spreading to convert set to array
     }
 
     socket.on(
@@ -85,7 +96,7 @@ export const initSocket = (io) => {
       console.log(`User ${userId} has disconnected`);
       if (userId) {
         socket.leave(userId);
-        onlineUsers.delete(userId);
+        const onlineUsers = getOnlineUsers(io.sockets.adapter.rooms);
         io.emit(ChatEventEnum.USER_ONLINE_STATUS, [...onlineUsers]); // spreading to convert set to array
       }
     });

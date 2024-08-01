@@ -32,6 +32,7 @@ const GroupInbox = () => {
     fetchNextPage,
     isFetchingNextPage,
     isLoading: isGroupMessagesLoading,
+    error,
   } = useInfiniteQuery({
     queryKey: ["getGroupMessages", selectedGroup?._id],
     queryFn: ({ pageParam }) =>
@@ -45,19 +46,28 @@ const GroupInbox = () => {
     enabled: !!selectedGroup?._id,
   });
 
+  useEffect(() => {
+    if (error) {
+      if (error.response) {
+        toast.error(error.response.data.message);
+        if (error.response.status === 401) {
+          logoutActions();
+        }
+      } else {
+        toast.error("Something went wrong");
+      }
+    }
+  }, [logoutActions, error]);
+
   const groupMessages = messageResponse
     ? messageResponse.pages.flatMap((d) => d.data.messages)
     : [];
 
-  const {
-    data: lastSeenList,
-    isLoading: isLastSeenListLoading,
-    error: lastSeenListError,
-  } = useFetchData(
+  const { data: lastSeenList, isLoading: isLastSeenListLoading } = useFetchData(
     ["lastSeenOfParticipants", selectedGroup?._id],
     `group-conversation/group/${selectedGroup._id}/participants-last-seen`,
     {
-      enabled: !!(groupMessages.length > 0 && selectedGroup?._id),
+      enabled: !!(groupMessages.length > 0 && selectedGroup?._id && !error),
     }
   );
 

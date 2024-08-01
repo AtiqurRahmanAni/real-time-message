@@ -31,7 +31,8 @@ const Inbox = () => {
     data: messageResponse,
     fetchNextPage,
     isFetchingNextPage,
-    isMessageLoading,
+    isLoading: isMessageLoading,
+    error,
   } = useInfiniteQuery({
     queryKey: ["getMessages", selectedConversation?.conversation?._id],
     queryFn: ({ pageParam }) =>
@@ -45,6 +46,19 @@ const Inbox = () => {
     enabled: !!selectedConversation?.conversation,
   });
 
+  useEffect(() => {
+    if (error) {
+      if (error.response) {
+        toast.error(error.response.data.message);
+        if (error.response.status === 401) {
+          logoutActions();
+        }
+      } else {
+        toast.error("Something went wrong");
+      }
+    }
+  }, [logoutActions, error]);
+
   const messages = messageResponse
     ? messageResponse.pages.flatMap((d) => d.data.messages)
     : [];
@@ -53,7 +67,11 @@ const Inbox = () => {
     ["lastSeenTime", selectedConversation._id],
     `conversation/${selectedConversation?.conversation?._id}/user/${selectedConversation._id}/last-seen`,
     {
-      enabled: !!(messages.length > 0 && selectedConversation?.conversation),
+      enabled: !!(
+        messages.length > 0 &&
+        selectedConversation?.conversation &&
+        !error
+      ),
     }
   );
 
