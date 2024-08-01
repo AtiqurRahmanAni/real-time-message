@@ -97,17 +97,28 @@ export const getGroupsByParticipantId = asyncHandler(async (req, res) => {
 
 export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
   let { groupId } = req.params;
-  groupId = new mongoose.Types.ObjectId(groupId);
+  let { pageSize = 20, pageNo = 1 } = req.query;
+  pageNo = parseInt(pageNo, 10);
+  pageSize = parseInt(pageSize, 10);
+
+  const totalMessages = await GroupMessage.countDocuments({ groupId });
+  const totalPages = Math.ceil(totalMessages / pageSize);
 
   try {
     const messages = await GroupMessage.find({ groupId })
       .sort({ createdAt: -1 })
-      .limit(20)
+      .skip((pageNo - 1) * pageSize)
+      .limit(pageSize)
       .select({
         groupId: false,
         __v: false,
       });
-    return res.status(200).send(messages.reverse());
+
+    const response = {
+      messages,
+      nextPage: pageNo + 1 <= totalPages ? pageNo + 1 : null,
+    };
+    return res.status(200).send(response);
   } catch (err) {
     console.error(`Error fetching group messages: ${err}`);
     throw new InternalServerError("Error fetching group messages");

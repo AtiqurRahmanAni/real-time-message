@@ -251,11 +251,21 @@ const Chat = () => {
     ) {
       queryClient.setQueryData(["getMessages", conversation._id], (oldData) => {
         if (!oldData) return;
-
-        return {
-          ...oldData,
-          data: [...oldData.data, message],
-        };
+        const updatedMessages = [message, ...oldData.pages[0].data.messages];
+        // Create a new pages array with the first page updated with the new messages array
+        const updatedPages = oldData.pages.map((page, index) => {
+          if (index === 0) {
+            return {
+              ...page,
+              data: {
+                ...page.data,
+                messages: updatedMessages,
+              },
+            };
+          }
+          return page;
+        });
+        return { ...oldData, pages: updatedPages };
       });
     }
 
@@ -418,9 +428,23 @@ const Chat = () => {
         ["getGroupMessages", currentSelectedGroup._id],
         (oldData) => {
           if (!oldData) return;
+          const updatedMessages = [message, ...oldData.pages[0].data.messages];
+          // Create a new pages array with the first page updated with the new messages array
+          const updatedPages = oldData.pages.map((page, index) => {
+            if (index === 0) {
+              return {
+                ...page,
+                data: {
+                  ...page.data,
+                  messages: updatedMessages,
+                },
+              };
+            }
+            return page;
+          });
           return {
             ...oldData,
-            data: [...oldData.data, message],
+            pages: updatedPages,
           };
         }
       );
