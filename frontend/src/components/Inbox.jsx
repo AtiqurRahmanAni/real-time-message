@@ -1,6 +1,10 @@
 import conversationStore from "../stores/conversationStore";
 import { useAuthContext } from "../context/AuthContextProvider.jsx";
-import { useInfiniteQuery, useMutation } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import axiosInstance from "../utils/axiosInstance.js";
 import TextInput from "./TextInput.jsx";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -21,6 +25,7 @@ const Inbox = () => {
   const selectedImageUrl = useRef(null);
   const { ref, inView } = useInView();
   const isInitialLoad = useRef(true);
+  const queryClient = useQueryClient();
 
   const {
     data: messageResponse,
@@ -91,6 +96,22 @@ const Inbox = () => {
     }
   }, [fetchNextPage, inView]);
 
+  useEffect(() => {
+    return () => {
+      queryClient.setQueryData(
+        ["getMessages", selectedConversation?.conversation?._id],
+        (oldData) => {
+          if (!oldData) return;
+
+          return {
+            pages: oldData.pages.slice(0, 1),
+            pageParams: oldData.pageParams.slice(0, 1),
+          };
+        }
+      );
+    };
+  }, [selectedConversation?.conversation?._id]);
+
   const onImageClick = (imageUrl) => {
     selectedImageUrl.current = imageUrl;
     setIsOpen(true);
@@ -112,7 +133,7 @@ const Inbox = () => {
             <div ref={messagesEndRef} />
             {messages?.map((message, idx) => (
               <ChatItem
-                key={message._id}
+                key={message._id + idx}
                 message={message}
                 onImageClick={onImageClick}
                 lastSeenTimeOfReceiver={lastSeenTime?.data?.lastSeenTime}

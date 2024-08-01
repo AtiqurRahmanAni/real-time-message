@@ -140,7 +140,7 @@ export const getMessagesByConversationId = asyncHandler(async (req, res) => {
   pageNo = parseInt(pageNo, 10);
   pageSize = parseInt(pageSize, 10);
 
-  const totalMessages = await Message.countDocuments();
+  const totalMessages = await Message.countDocuments({ conversationId });
   const totalPages = Math.ceil(totalMessages / pageSize);
 
   const messages = await Message.find({ conversationId })
