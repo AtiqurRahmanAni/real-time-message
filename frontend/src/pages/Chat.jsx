@@ -33,6 +33,7 @@ const Chat = () => {
   const selectedConversationRef = useRef(selectedConversation);
 
   const selectedGroup = groupStore((state) => state.selectedGroup);
+  const setSelectedGroup = groupStore((state) => state.setSelectedGroup);
   const selectedGroupRef = useRef(selectedGroup);
 
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
@@ -64,6 +65,7 @@ const Chat = () => {
     socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
     socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
     socket.on(GroupChatEventEnum.GROUP_MESSAGE_DELETE, onGroupMessagesDelete);
+    socket.on(GroupChatEventEnum.GROUP_DELETE, onGroupDelete);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
@@ -88,6 +90,7 @@ const Chat = () => {
         GroupChatEventEnum.GROUP_MESSAGE_DELETE,
         onGroupMessagesDelete
       );
+      socket.off(GroupChatEventEnum.GROUP_DELETE, onGroupDelete);
     };
   }, [socket]);
 
@@ -495,6 +498,12 @@ const Chat = () => {
     if (currentSelectedGroup?._id === groupId) {
       queryClient.invalidateQueries(["getGroupMessages", groupId]);
     }
+    queryClient.invalidateQueries(["getGroups"]);
+  };
+
+  // refetch groups
+  const onGroupDelete = () => {
+    setSelectedGroup(null);
     queryClient.invalidateQueries(["getGroups"]);
   };
 

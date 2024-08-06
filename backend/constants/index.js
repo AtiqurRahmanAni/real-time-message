@@ -46,4 +46,6 @@ export const GroupChatEventEnum = Object.freeze({
   GROUP_LAST_SEEN: "groupLastSeen",
   // ? when group messages are deleted
   GROUP_MESSAGE_DELETE: "groupMessageDelete",
+  // ? when a group is deleted
+  GROUP_DELETE: "groupDelete",
 });

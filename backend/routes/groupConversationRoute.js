@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createGroupByUserIds,
+  deleteGroupByGroupId,
   deleteMessagesByGroupId,
   getGroupMessagesByGroupId,
   getGroupsByParticipantId,
@@ -41,5 +42,6 @@ router.patch(
 );
 
 router.delete("/group/:groupId/messages", checkToken, deleteMessagesByGroupId);
+router.delete("/group/:groupId", checkToken, deleteGroupByGroupId);
 
 export default router;

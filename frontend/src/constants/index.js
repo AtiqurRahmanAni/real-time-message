@@ -1,23 +1,3 @@
-import Vo_phantom_assassin_phass_spawn_01_mp3_mpeg from "../assets/notifications/Vo_phantom_assassin_phass_spawn_01.mp3.mpeg";
-import Vo_phantom_assassin_phass_spawn_03_mp3_mpeg from "../assets/notifications/Vo_phantom_assassin_phass_spawn_03.mp3.mpeg";
-import Vo_pudge_pud_ability_devour_02_mp3_mpeg from "../assets/notifications/Vo_pudge_pud_ability_devour_02.mp3.mpeg";
-import Vo_pudge_pud_ability_hook_02_mp3_mpeg from "../assets/notifications/Vo_pudge_pud_ability_hook_02.mp3.mpeg";
-import Vo_pudge_pud_spawn_01_mp3_mpeg from "../assets/notifications/Vo_pudge_pud_spawn_01.mp3.mpeg";
-import Vo_pudge_pud_spawn_06_mp3_mpeg from "../assets/notifications/Vo_pudge_pud_spawn_06.mp3.mpeg";
-import Vo_shadowshaman_shad_ability_voodoo_04_mp3_mpeg from "../assets/notifications/Vo_shadowshaman_shad_ability_voodoo_04.mp3.mpeg";
-import Vo_shadowshaman_shad_level_03_mp3_mpeg from "../assets/notifications/Vo_shadowshaman_shad_level_03.mp3.mpeg";
-import Vo_witchdoctor_wdoc_attack_06_mp3_mpeg from "../assets/notifications/Vo_witchdoctor_wdoc_attack_06.mp3.mpeg";
-import Vo_witchdoctor_wdoc_move_06_mp3_mpeg from "../assets/notifications/Vo_witchdoctor_wdoc_move_06.mp3.mpeg";
-import Vo_witchdoctor_wdoc_move_09_mp3_mpeg from "../assets/notifications/Vo_witchdoctor_wdoc_move_09.mp3.mpeg";
-import Vo_phantom_assassin_phass_arc_spawn_02_mp3_mpeg from "../assets/notifications/Vo_phantom_assassin_phass_arc_spawn_02.mp3.mpeg";
-import Vo_phantom_assassin_phass_move_10_mp3_mpeg from "../assets/notifications/Vo_phantom_assassin_phass_move_10.mp3.mpeg";
-import Vo_phantom_assassin_phass_spawn_05_mp3_mpeg from "../assets/notifications/Vo_phantom_assassin_phass_spawn_05.mp3.mpeg";
-import Vo_pudge_pud_ability_devour_03_mp3_mpeg from "../assets/notifications/Vo_pudge_pud_ability_devour_03.mp3.mpeg";
-import Vo_pudge_pud_ability_hook_miss_01_mp3_mpeg from "../assets/notifications/Vo_pudge_pud_ability_hook_miss_01.mp3.mpeg";
-import Vo_shadowshaman_shad_ability_voodoo_06_mp3_mpeg from "../assets/notifications/Vo_shadowshaman_shad_ability_voodoo_06.mp3.mpeg";
-import Vo_shadowshaman_shad_ability_ward_04_mp3_mpeg from "../assets/notifications/Vo_shadowshaman_shad_ability_ward_04.mp3.mpeg";
-import Vo_shadowshaman_shad_ability_ward_06_mp3_mpeg from "../assets/notifications/Vo_shadowshaman_shad_ability_ward_06.mp3.mpeg";
-
 export const ChatEventEnum = Object.freeze({
   // ? once user is ready to go
   CONNECTED_EVENT: "connected",
@@ -66,26 +46,6 @@ export const GroupChatEventEnum = Object.freeze({
   GROUP_LAST_SEEN: "groupLastSeen",
   // ? when group messages are deleted
   GROUP_MESSAGE_DELETE: "groupMessageDelete",
+  // ? when a group is deleted
+  GROUP_DELETE: "groupDelete",
 });
-
-export const notificationSounds = [
-  Vo_phantom_assassin_phass_spawn_01_mp3_mpeg,
-  Vo_phantom_assassin_phass_spawn_03_mp3_mpeg,
-  Vo_pudge_pud_ability_devour_02_mp3_mpeg,
-  Vo_pudge_pud_ability_hook_02_mp3_mpeg,
-  Vo_pudge_pud_spawn_01_mp3_mpeg,
-  Vo_pudge_pud_spawn_06_mp3_mpeg,
-  Vo_shadowshaman_shad_ability_voodoo_04_mp3_mpeg,
-  Vo_shadowshaman_shad_level_03_mp3_mpeg,
-  Vo_witchdoctor_wdoc_attack_06_mp3_mpeg,
-  Vo_witchdoctor_wdoc_move_06_mp3_mpeg,
-  Vo_witchdoctor_wdoc_move_09_mp3_mpeg,
-  Vo_phantom_assassin_phass_arc_spawn_02_mp3_mpeg,
-  Vo_phantom_assassin_phass_move_10_mp3_mpeg,
-  Vo_phantom_assassin_phass_spawn_05_mp3_mpeg,
-  Vo_pudge_pud_ability_devour_03_mp3_mpeg,
-  Vo_pudge_pud_ability_hook_miss_01_mp3_mpeg,
-  Vo_shadowshaman_shad_ability_voodoo_06_mp3_mpeg,
-  Vo_shadowshaman_shad_ability_ward_04_mp3_mpeg,
-  Vo_shadowshaman_shad_ability_ward_06_mp3_mpeg,
-];

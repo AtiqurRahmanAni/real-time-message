@@ -49,9 +49,10 @@ const GroupInbox = () => {
   useEffect(() => {
     if (error) {
       if (error.response) {
-        toast.error(error.response.data.message);
         if (error.response.status === 401) {
           logoutActions();
+        } else {
+          toast.error(error.response.data.message);
         }
       } else {
         toast.error("Something went wrong");
