@@ -29,4 +29,5 @@ There is a `VITE_API_BASE_URL` and `VITE_SOCKET_URL` variables in the `.env` fil
   
 There is an `ALLOWED_ORIGIN` variable in the `.env` file. The value of this variable will be the url of the frontend. For instance, if the frontend runs on `http://localhost:5173`, the value of the variable will be this url. `PORT` is the port for the backend. `JWT_SECRET` will be a large random string to generate `jwt-token` for authentication.
 
-
+### Project Demo
+[Demo video](https://youtu.be/doNflwl3nys?si=a3Earg4juw2fWLS0)
