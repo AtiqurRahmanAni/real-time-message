@@ -40,10 +40,13 @@ const Chat = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   // --------------- for one to one chat ------------------ //
-  const { data: conversations, isLoading: isConversationsLoading } =
-    useFetchData(["getConversations"], `/conversation/${user._id}`, {
-      refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
-    });
+  const {
+    data: conversations,
+    isLoading: isConversationsLoading,
+    error: conversationFetchError,
+  } = useFetchData(["getConversations"], `/conversation/${user._id}`, {
+    refetchInterval: 1000 * 60 * 5, // refetch sidebar data every 5 minutes so that timestamp updates
+  });
 
   // socket configuration
   useEffect(() => {
@@ -503,8 +506,8 @@ const Chat = () => {
 
   // refetch groups
   const onGroupDelete = () => {
-    setSelectedGroup(null);
     queryClient.invalidateQueries(["getGroups"]);
+    setSelectedGroup(null);
   };
 
   // for updating the seen message in a group

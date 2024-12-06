@@ -68,7 +68,7 @@ const GroupInbox = () => {
     ["lastSeenOfParticipants", selectedGroup?._id],
     `group-conversation/group/${selectedGroup._id}/participants-last-seen`,
     {
-      enabled: !!(groupMessages.length > 0 && selectedGroup?._id && !error),
+      enabled: !!(selectedGroup?._id && groupMessages.length > 0 && !error),
     }
   );
 
@@ -142,6 +142,12 @@ const GroupInbox = () => {
   const sendMessage = useCallback((formData) => {
     messageSendMutation.mutate(formData);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      queryClient.clear();
+    };
+  }, [queryClient]);
 
   return (
     <>

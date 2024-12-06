@@ -118,6 +118,7 @@ export const getGroupMessagesByGroupId = asyncHandler(async (req, res) => {
       messages,
       nextPage: pageNo + 1 <= totalPages ? pageNo + 1 : null,
     };
+
     return res.status(200).send(response);
   } catch (err) {
     console.error(`Error fetching group messages: ${err}`);

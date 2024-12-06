@@ -64,6 +64,7 @@ export const AuthContextProvider = ({ children }) => {
     setUser(null);
     resetConversations();
     resetGroups();
+    queryClient.cancelQueries();
     queryClient.removeQueries();
   };
 
