@@ -7,6 +7,7 @@ import socketStore from "../stores/socketStore";
 import { useQueryClient } from "@tanstack/react-query";
 import conversationStore from "../stores/conversationStore";
 import groupStore from "../stores/groupStore";
+import Loading from "../components/Loading";
 
 const AuthContext = createContext();
 
@@ -76,7 +77,7 @@ export const AuthContextProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {loading ? null : children}
+      {loading ? <Loading /> : children}
     </AuthContext.Provider>
   );
 };
