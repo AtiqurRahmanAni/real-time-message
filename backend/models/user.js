@@ -21,5 +21,5 @@ const userSchema = new Schema({
 });
 
 const User = model("User", userSchema);
-// User.createIndexes({ username: 1 }, { unique: true });
+User.createIndexes({ username: 1 }, { unique: true });
 export default User;
