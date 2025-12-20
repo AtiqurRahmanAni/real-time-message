@@ -1,17 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,600;1,400;1,600&display=swap')
+layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-@layer components {
-    .btn-primary {
-        @apply bg-blue-600 hover:bg-blue-600/85;
-    }
-    .btn-secondary {
-        @apply bg-gray-500 hover:bg-gray-500/85;
-    }
-    .btn-danger {
-        @apply bg-red-500 hover:bg-red-500/90;
-    }
+@utility container {
+  margin-inline: auto;
+}
+
+@theme {
+  --font-roboto: Roboto, sans;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility btn-primary {
+  @apply bg-blue-600 hover:bg-blue-600/85;
+}
+
+@utility btn-secondary {
+  @apply bg-gray-500 hover:bg-gray-500/85;
+}
+
+@utility btn-danger {
+  @apply bg-red-500 hover:bg-red-500/90;
 }

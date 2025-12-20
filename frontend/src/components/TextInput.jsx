@@ -159,7 +159,7 @@ const TextInput = ({ onSendButtonClick, disabled = false }) => {
           <textarea
             onChange={handleTextInputChange}
             onBlur={handleOnBlur}
-            className="bg-transparent pl-12 pr-14 w-full text-gray-200 focus:outline-none"
+            className="bg-transparent pl-12 pr-14 w-full text-gray-200 focus:outline-hidden"
             value={messageContent}
             rows={2}
             maxLength={400}

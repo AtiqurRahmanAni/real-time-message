@@ -83,7 +83,7 @@ const GroupChatItem = ({
             <Linkify
               as="p"
               options={{ render: RenderLink }}
-              className="whitespace-pre-wrap break-words"
+              className="whitespace-pre-wrap wrap-break-word"
             >
               {message.content}
             </Linkify>

@@ -14,7 +14,7 @@ const GroupNameInput = ({ groupName, setGroupName }) => {
           type="text"
           value={groupName}
           onChange={(e) => setGroupName(e.target.value)}
-          className="bg-gray-200 ml-2 rounded-md focus:outline-none px-2 py-1 text-gray-800"
+          className="bg-gray-200 ml-2 rounded-md focus:outline-hidden px-2 py-1 text-gray-800"
           onBlur={setFocused}
         />
       </div>

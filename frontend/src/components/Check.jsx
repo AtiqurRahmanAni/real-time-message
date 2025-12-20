@@ -13,10 +13,10 @@ const Check = ({ id, label, selected, setSelected }) => {
       <Checkbox
         checked={selected.some((item) => item.id === id)}
         onChange={setItem}
-        className="group  block size-5 rounded border border-gray-400 bg-white data-[checked]:bg-blue-500"
+        className="group  block size-5 rounded-sm border border-gray-400 bg-white data-checked:bg-blue-500"
       >
         <svg
-          className="stroke-white opacity-0 group-data-[checked]:opacity-100"
+          className="stroke-white opacity-0 group-data-checked:opacity-100"
           viewBox="0 0 14 14"
           fill="none"
         >

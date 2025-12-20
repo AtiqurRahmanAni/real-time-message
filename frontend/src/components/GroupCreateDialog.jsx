@@ -63,7 +63,7 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
     <Transition appear show={isOpen}>
       <Dialog
         as="div"
-        className="relative z-10 focus:outline-none"
+        className="relative z-10 focus:outline-hidden"
         onClose={closeDialog}
       >
         <TransitionChild

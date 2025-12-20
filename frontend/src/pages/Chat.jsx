@@ -170,8 +170,6 @@ const Chat = () => {
       },
     */
     if (message.receiverId === user._id) {
-      // const soundNo = generateRandomNumber(notificationSounds.length);
-      // playNotification(notificationSounds[soundNo]);
       playNotification(messageSound);
     }
 
@@ -377,8 +375,6 @@ const Chat = () => {
     const currentSelectedGroup = selectedGroupRef.current;
 
     if (message.senderId !== user._id) {
-      // const soundNo = generateRandomNumber(notificationSounds.length);
-      // playNotification(notificationSounds[soundNo]);
       playNotification(messageSound);
     }
 
