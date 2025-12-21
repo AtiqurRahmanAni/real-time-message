@@ -279,49 +279,66 @@ export const updateLastSeenOfParticipant = asyncHandler(async (req, res) => {
   }
 });
 
-export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
-  let { groupId } = req.params;
-  groupId = new mongoose.Types.ObjectId(groupId);
+// Helper functions for deleting group messages and groups
 
+const deleteCloudinaryAttachments = async (attachments) => {
+  return await Promise.all(
+    attachments.map((attachment) => {
+      return new Promise((resolve, reject) => {
+        cloudinary.uploader.destroy(attachment.publicId, (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+    })
+  );
+};
+
+const getGroupAttachments = async (groupId, session) => {
+  return await GroupMessage.aggregate(
+    [
+      {
+        $match: { groupId: groupId },
+      },
+      {
+        $unwind: "$attachments",
+      },
+      {
+        $project: {
+          _id: false,
+          publicId: "$attachments.publicId",
+        },
+      },
+    ],
+    { session }
+  );
+};
+
+const createTransactionSession = async () => {
   const session = await mongoose.startSession();
   session.startTransaction({
     readConcern: { level: "snapshot" },
     writeConcern: { w: "majority" },
     maxCommitTimeMS: 3 * 60 * 1000, // 3 mins
   });
+  return session;
+};
+
+export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
+  let { groupId } = req.params;
+  groupId = new mongoose.Types.ObjectId(groupId);
+
+  const session = await createTransactionSession();
 
   try {
-    const attachments = await GroupMessage.aggregate(
-      [
-        {
-          $match: { groupId: groupId },
-        },
-        {
-          $unwind: "$attachments",
-        },
-        {
-          $project: {
-            _id: false,
-            publicId: "$attachments.publicId",
-          },
-        },
-      ],
-      { session }
-    );
+    const attachments = await getGroupAttachments(groupId, session);
 
     // delete from attachments from cloudinary
-    const deleteAttachmentsResult = await Promise.all(
-      attachments.map((attachment) => {
-        return new Promise((resolve, reject) => {
-          cloudinary.uploader.destroy(attachment.publicId, (error, result) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result);
-            }
-          });
-        });
-      })
+    const deleteAttachmentsResult = await deleteCloudinaryAttachments(
+      attachments
     );
 
     const messagesDeleteResult = await GroupMessage.deleteMany({
@@ -344,6 +361,54 @@ export const deleteMessagesByGroupId = asyncHandler(async (req, res) => {
     });
 
     return res.status(200).json({ message: "Messages deleted" });
+  } catch (err) {
+    await session.abortTransaction();
+    console.error(`Error deleting group messages: ${err}`);
+    throw new InternalServerError("Error deleting group messages");
+  } finally {
+    session.endSession();
+  }
+});
+
+export const deleteGroupByGroupId = asyncHandler(async (req, res) => {
+  let { groupId } = req.params;
+  groupId = new mongoose.Types.ObjectId(groupId);
+
+  const group = await Conversation.findOne({
+    _id: groupId,
+    isGroupConversation: true,
+  });
+  if (!group) {
+    return res.status(404).json({ message: "Group not found" });
+  }
+
+  const participants = group.participants;
+
+  const session = await createTransactionSession();
+
+  try {
+    const attachments = await getGroupAttachments(groupId, session);
+
+    // delete from attachments from cloudinary
+    const deleteAttachmentsResult = await deleteCloudinaryAttachments(
+      attachments
+    );
+
+    const messagesDeleteResult = await GroupMessage.deleteMany({
+      groupId,
+    }).session(session);
+    const groupDeleteResult = await group.deleteOne({ session });
+
+    await session.commitTransaction();
+
+    participants.forEach((participant) => {
+      req.app
+        .get("io")
+        .in(participant.participantId.toString())
+        .emit(GroupChatEventEnum.GROUP_DELETED_EVENT, groupId.toString());
+    });
+
+    return res.status(200).json({ message: "Group deleted" });
   } catch (err) {
     await session.abortTransaction();
     console.error(`Error deleting group messages: ${err}`);

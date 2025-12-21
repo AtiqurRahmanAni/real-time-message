@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createGroupByUserIds,
+  deleteGroupByGroupId,
   deleteMessagesByGroupId,
   getGroupMessagesByGroupId,
   getGroupsByParticipantId,
@@ -34,6 +35,7 @@ router.post(
   multerErrorHandling,
   sendGroupMessage
 );
+
 router.patch(
   "/group/:groupId/participant-last-seen",
   checkToken,
@@ -41,5 +43,6 @@ router.patch(
 );
 
 router.delete("/group/:groupId/messages", checkToken, deleteMessagesByGroupId);
+router.delete("/group/:groupId", checkToken, deleteGroupByGroupId);
 
 export default router;
