@@ -32,5 +32,14 @@ const conversationSchema = new Schema({
 });
 
 const Conversation = model("Conversation", conversationSchema);
-Conversation.createIndexes({ participants: 1 });
+Conversation.createIndexes({ "participants.participantId": 1 });
+Conversation.createIndexes({
+  isGroupConversation: 1,
+  "participants.participantId": 1,
+});
+Conversation.createIndexes({
+  lastMessageId: 1,
+});
+Conversation.syncIndexes();
+
 export default Conversation;

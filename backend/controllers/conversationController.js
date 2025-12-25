@@ -14,16 +14,6 @@ import "dotenv/config";
 const NODE_ENV = process.env.NODE_ENV;
 const limit = pLimit(10);
 
-export const getConversationByParticipantIds = asyncHandler(
-  async (req, res) => {
-    const { participantIds } = req.params;
-    const id1 = participantIds.split("&")[0];
-    const id2 = participantIds.split("&")[1];
-
-    return res.status(200).send("Ok");
-  }
-);
-
 export const getConversationsByUserId = asyncHandler(async (req, res) => {
   let { userId } = req.params;
   userId = new mongoose.Types.ObjectId(userId);
@@ -43,12 +33,12 @@ export const getConversationsByUserId = asyncHandler(async (req, res) => {
             $match: {
               $expr: {
                 $and: [
+                  {
+                    $eq: ["$isGroupConversation", false],
+                  },
                   { $in: ["$$userId", "$participants.participantId"] },
                   {
                     $in: [userId, "$participants.participantId"],
-                  },
-                  {
-                    $eq: ["$isGroupConversation", false],
                   },
                 ],
               },
@@ -162,18 +152,17 @@ export const getLastSeenByUserId = asyncHandler(async (req, res) => {
   const { conversationId, userId } = req.params;
 
   try {
-    const lastSeen = await Conversation.aggregate([
-      { $match: { _id: new mongoose.Types.ObjectId(conversationId) } },
-      { $unwind: "$participants" },
+    const result = await Conversation.findOne(
       {
-        $match: {
-          "participants.participantId": new mongoose.Types.ObjectId(userId),
-        },
+        _id: new mongoose.Types.ObjectId(conversationId),
+        "participants.participantId": new mongoose.Types.ObjectId(userId),
       },
-      { $project: { _id: 0, lastSeenTime: "$participants.lastSeenTime" } },
-    ]);
-
-    return res.status(200).send(lastSeen[0]);
+      {
+        "participants.$": 1,
+      }
+    );
+    const lastSeenTime = result?.participants[0]?.lastSeenTime || null;
+    return res.status(200).send(lastSeenTime);
   } catch (err) {
     console.error(`Error fetching last seen: ${err}`);
     throw new InternalServerError("Error fetching last seen");
@@ -231,13 +220,7 @@ export const sendMessage = asyncHandler(async (req, res) => {
     let conversation = null;
     conversation = await Conversation.findOne({
       isGroupConversation: false,
-      participants: {
-        $all: [
-          { $elemMatch: { participantId: senderId } },
-          { $elemMatch: { participantId: receiverId } },
-        ],
-        $size: 2,
-      },
+      "participants.participantId": { $all: [senderId, receiverId] },
     }).select({ __v: false });
 
     conversation =
@@ -319,23 +302,15 @@ export const deleteMessagesByConversationId = asyncHandler(async (req, res) => {
   });
 
   try {
-    const attachments = await Message.aggregate(
-      [
-        {
-          $match: { conversationId },
-        },
-        {
-          $unwind: "$attachments",
-        },
-        {
-          $project: {
-            _id: false,
-            publicId: "$attachments.publicId",
-          },
-        },
-      ],
-      { session }
-    );
+    const messages = await Message.find(
+      { conversationId },
+      {
+        "attachments.publicId": 1,
+        _id: 0,
+      }
+    ).session(session);
+
+    const attachments = messages.flatMap((message) => message.attachments);
 
     const deleteAttachmentsResult = await Promise.all(
       attachments.map((attachment) => {

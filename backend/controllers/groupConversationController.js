@@ -21,8 +21,8 @@ export const getGroupsByParticipantId = asyncHandler(async (req, res) => {
     const groups = await Conversation.aggregate([
       {
         $match: {
-          "participants.participantId": participantId,
           isGroupConversation: true,
+          "participants.participantId": participantId,
         },
       },
       {
@@ -298,23 +298,16 @@ const deleteCloudinaryAttachments = async (attachments) => {
 };
 
 const getGroupAttachments = async (groupId, session) => {
-  return await GroupMessage.aggregate(
-    [
-      {
-        $match: { groupId: groupId },
-      },
-      {
-        $unwind: "$attachments",
-      },
-      {
-        $project: {
-          _id: false,
-          publicId: "$attachments.publicId",
-        },
-      },
-    ],
-    { session }
-  );
+  const groupMessages = await GroupMessage.find(
+    { groupId: groupId },
+    {
+      _id: 0,
+      "attachments.publicId": 1,
+    }
+  ).session(session);
+
+  const attachments = groupMessages.flatMap((message) => message.attachments);
+  return attachments;
 };
 
 const createTransactionSession = async () => {

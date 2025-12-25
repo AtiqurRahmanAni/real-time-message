@@ -30,4 +30,7 @@ const messageSchema = new Schema({
 
 const Message = model("Message", messageSchema);
 Message.createIndexes({ conversationId: 1 });
+Message.createIndexes({ conversationId: 1, createdAt: -1 });
+Message.syncIndexes();
+
 export default Message;

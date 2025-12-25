@@ -10,14 +10,16 @@ import { useAuthContext } from "../context/AuthContextProvider";
 const GroupSettingsDropDown = ({ groupId }) => {
   const { logoutActions } = useAuthContext();
 
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isMessageDeleteModalOpen, setIsMessageDeleteModalOpen] =
+    useState(false);
+  const [isGroupDeleteModalOpen, setIsGroupDeleteModalOpen] = useState(false);
 
   const groupMessageDeleteMutation = useMutation({
     mutationFn: () =>
       axiosInstance.delete(`group-conversation/group/${groupId}/messages`),
     onSuccess: (response) => {
       toast.success(response.data.message);
-      setIsDeleteModalOpen(false);
+      setIsMessageDeleteModalOpen(false);
     },
     onError: (error) => {
       toast.error(
@@ -28,6 +30,24 @@ const GroupSettingsDropDown = ({ groupId }) => {
       }
     },
   });
+
+  const groupDeleteMutation = useMutation({
+    mutationFn: () =>
+      axiosInstance.delete(`group-conversation/group/${groupId}`),
+    onSuccess: (response) => {
+      toast.success(response.data.message);
+      setIsGroupDeleteModalOpen(false);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response ? error.response.data.message : "Something went wrong"
+      );
+      if (error?.response.status === 401) {
+        logoutActions();
+      }
+    },
+  });
+
   return (
     <>
       <div className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -41,7 +61,10 @@ const GroupSettingsDropDown = ({ groupId }) => {
             className="mt-1 w-36 origin-top-right rounded-xl border border-gray-700 bg-gray-800 p-1 text-sm/6 text-gray-200 transition duration-100 ease-out [--anchor-gap:var(--spacing-1)] focus:outline-hidden data-closed:scale-95 data-closed:opacity-0"
           >
             <MenuItem>
-              <button className="group flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-focus:bg-white/10">
+              <button
+                className="group flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-focus:bg-white/10"
+                onClick={() => setIsGroupDeleteModalOpen(true)}
+              >
                 Delete Group
               </button>
             </MenuItem>
@@ -49,7 +72,7 @@ const GroupSettingsDropDown = ({ groupId }) => {
             <MenuItem>
               <button
                 className="group flex w-full items-center gap-2 rounded-lg py-1.5 px-3 data-focus:bg-white/10"
-                onClick={() => setIsDeleteModalOpen(true)}
+                onClick={() => setIsMessageDeleteModalOpen(true)}
               >
                 Delete Messages
               </button>
@@ -58,10 +81,16 @@ const GroupSettingsDropDown = ({ groupId }) => {
         </Menu>
       </div>
       <DeleteConfirmationDialog
-        isOpen={isDeleteModalOpen}
-        setIsOpen={setIsDeleteModalOpen}
+        isOpen={isMessageDeleteModalOpen}
+        setIsOpen={setIsMessageDeleteModalOpen}
         disableButtons={groupMessageDeleteMutation.isPending}
         deleteFn={() => groupMessageDeleteMutation.mutate()}
+      />
+      <DeleteConfirmationDialog
+        isOpen={isGroupDeleteModalOpen}
+        setIsOpen={setIsGroupDeleteModalOpen}
+        disableButtons={groupDeleteMutation.isPending}
+        deleteFn={() => groupDeleteMutation.mutate()}
       />
     </>
   );

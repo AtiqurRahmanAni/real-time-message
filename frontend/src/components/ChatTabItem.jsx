@@ -90,7 +90,7 @@ const ChatTabItem = ({ item }) => {
             )}
           </div>
           {onlineUsers.includes(item._id) && (
-            <div className="absolute right-2 top-2 w-[8px] h-[8px] bg-green-600 rounded-full" />
+            <div className="absolute right-2 top-2 w-2 h-2 bg-green-600 rounded-full" />
           )}
         </div>
         {item?.lastMessage && (

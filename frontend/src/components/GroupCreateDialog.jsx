@@ -36,6 +36,7 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
     mutationFn: (data) => axiosInstance.post("group-conversation/group", data),
     onSuccess: (response) => {
       toast.success(response.data.message);
+      setIsOpen(false);
     },
     onError: (error) => {
       toast.error(
@@ -130,7 +131,7 @@ const GroupCreateDialog = ({ isOpen, setIsOpen }) => {
                   <div className="flex justify-end mt-4">
                     {selectedUsers.length > 0 && (
                       <Button
-                        className="btn-primary text-sm"
+                        className={"btn-primary text-sm"}
                         onClick={createGroup}
                         disabled={
                           createGroupMutation.isPending || groupName === ""

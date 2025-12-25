@@ -22,4 +22,6 @@ const userSchema = new Schema({
 
 const User = model("User", userSchema);
 User.createIndexes({ username: 1 }, { unique: true });
+User.syncIndexes();
+
 export default User;

@@ -33,6 +33,7 @@ const Chat = () => {
   const selectedConversationRef = useRef(selectedConversation);
 
   const selectedGroup = groupStore((state) => state.selectedGroup);
+  const resetGroup = groupStore((state) => state.resetGroups);
   const selectedGroupRef = useRef(selectedGroup);
 
   const setOnlineUsers = conversationStore((state) => state.setOnlineUsers);
@@ -64,6 +65,7 @@ const Chat = () => {
     socket.on(GroupChatEventEnum.GROUP_UPDATE_EVENT, onGroupUpdate);
     socket.on(GroupChatEventEnum.GROUP_LAST_SEEN, handleGroupMessageSeen);
     socket.on(GroupChatEventEnum.GROUP_MESSAGE_DELETE, onGroupMessagesDelete);
+    socket.on(GroupChatEventEnum.GROUP_DELETED_EVENT, onGroupDelete);
 
     return () => {
       socket.off(ChatEventEnum.NEW_USER_CREATE_EVENT, onNewUser);
@@ -88,6 +90,7 @@ const Chat = () => {
         GroupChatEventEnum.GROUP_MESSAGE_DELETE,
         onGroupMessagesDelete
       );
+      socket.off(GroupChatEventEnum.GROUP_DELETED_EVENT, onGroupDelete);
     };
   }, [socket]);
 
@@ -477,9 +480,20 @@ const Chat = () => {
     });
   };
 
-  // if new group is created or deleted, fetch the groups again
+  // if new group is created, fetch the groups again
   const onGroupUpdate = () => {
     queryClient.invalidateQueries({ queryKey: ["getGroups"] });
+  };
+
+  const onGroupDelete = (groupId) => {
+    /*
+    if selected group is deleted, deselect the group
+    */
+    queryClient.invalidateQueries({ queryKey: ["getGroups"] });
+    const currentSelectedGroup = selectedGroupRef.current;
+    if (currentSelectedGroup?._id === groupId) {
+      resetGroup();
+    }
   };
 
   const onGroupMessagesDelete = (groupId) => {

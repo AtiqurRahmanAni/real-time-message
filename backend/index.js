@@ -21,7 +21,9 @@ const PORT = process.env.PORT || 3000;
 
 mongoose
   .connect(process.env.DATABASE_URL)
-  .then(() => console.log("Connected to database"))
+  .then(() => {
+    console.log("Connected to database");
+  })
   .catch((err) => {
     console.log(`Error connecting to database ${err}`);
     process.exit(1);

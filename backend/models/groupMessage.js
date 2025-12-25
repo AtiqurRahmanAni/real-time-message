@@ -31,5 +31,8 @@ const groupMessageSchema = new Schema({
 });
 
 const GroupMessage = model("GroupMessage", groupMessageSchema);
-GroupMessage.createIndexes({ conversationId: 1 });
+GroupMessage.createIndexes({ groupId: 1 });
+GroupMessage.createIndexes({ groupId: 1, createdAt: -1 });
+GroupMessage.syncIndexes();
+
 export default GroupMessage;

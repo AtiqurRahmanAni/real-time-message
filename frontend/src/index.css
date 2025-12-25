@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,600;1,400;1,600&display=swap')
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,600;1,400;1,600&display=swap")
 layer(base);
 
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @utility container {
   margin-inline: auto;
@@ -39,4 +39,8 @@ layer(base);
 
 @utility btn-danger {
   @apply bg-red-500 hover:bg-red-500/90;
+}
+
+button {
+  cursor: pointer;
 }
